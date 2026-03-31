@@ -24,6 +24,55 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");}
 .wrapper{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:24px 20px 60px;}
 
+
+/* ═══ STICKY LIVE PRICE TICKER ═══ */
+.sticky-ticker{
+  position:fixed;top:0;left:0;right:0;z-index:999;
+  background:rgba(9,11,15,0.96);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(245,166,35,0.25);
+  padding:0 20px;
+  height:52px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  transform:translateY(-100%);
+  transition:transform 0.3s ease;
+}
+.sticky-ticker.visible{transform:translateY(0);}
+.st-left{display:flex;align-items:center;gap:16px;}
+.st-logo{font-family:var(--font-d);font-size:15px;font-weight:800;color:var(--text);letter-spacing:-.01em;white-space:nowrap;}
+.st-logo span{color:var(--accent);}
+.st-divider{width:1px;height:24px;background:var(--border);}
+.st-price-block{display:flex;align-items:baseline;gap:6px;}
+.st-label{font-family:var(--font-m);font-size:9px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;}
+.st-price{font-family:var(--font-d);font-size:28px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--accent);}
+.st-price.dim{color:var(--muted);}
+.st-unit{font-family:var(--font-d);font-size:13px;color:var(--muted);}
+.st-deltas{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.st-delta{display:flex;flex-direction:column;align-items:flex-start;}
+.st-dlabel{font-family:var(--font-m);font-size:8px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;line-height:1;margin-bottom:1px;}
+.st-dval{font-family:var(--font-d);font-size:16px;font-weight:700;line-height:1;letter-spacing:-.01em;}
+.st-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.st-source{font-family:var(--font-m);font-size:10px;letter-spacing:.08em;padding:3px 9px;border-radius:100px;display:inline-flex;align-items:center;gap:5px;}
+.st-source.live-aaa{color:var(--green);background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);}
+.st-source.live-eia{color:var(--accent);background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.25);}
+.st-source.loading{color:var(--muted);background:rgba(107,115,133,.1);border:1px solid rgba(107,115,133,.2);}
+.st-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+.st-dot.pulse{animation:pulse 1.5s ease infinite;}
+.st-clock{font-family:var(--font-m);font-size:10px;color:var(--muted);white-space:nowrap;}
+.st-dismiss{font-family:var(--font-m);font-size:10px;color:var(--muted);cursor:pointer;padding:4px 8px;border-radius:4px;border:1px solid var(--border);background:transparent;transition:all .15s;}
+.st-dismiss:hover{color:var(--text);border-color:var(--muted);}
+/* Push wrapper down when ticker visible */
+body.ticker-visible .wrapper{padding-top:76px;}
+@media(max-width:768px){
+  .sticky-ticker{height:44px;padding:0 12px;}
+  .st-price{font-size:22px;}
+  .st-deltas{display:none;}
+  .st-divider{display:none;}
+  .st-dismiss{display:none;}
+  body.ticker-visible .wrapper{padding-top:68px;}
+}
+
 /* NAV TABS */
 .nav-tabs{display:flex;gap:4px;margin-bottom:24px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px;width:fit-content;flex-wrap:wrap;}
 .nav-tab{font-family:var(--font-m);font-size:11px;letter-spacing:.08em;padding:7px 16px;border-radius:7px;border:none;background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap;}
@@ -204,10 +253,86 @@ footer{border-top:1px solid var(--border);padding-top:18px;display:flex;flex-wra
   .trend-card{grid-template-columns:1fr;text-align:center;}
   .stats-strip{grid-template-columns:1fr 1fr;}
 }
+
+  /* ─── LIVE TICKER BAR ─── */
+  .live-ticker{position:sticky;top:0;z-index:100;background:rgba(9,11,15,0.96);backdrop-filter:blur(12px);border-bottom:1px solid rgba(245,166,35,.2);padding:0;margin-bottom:18px;margin-left:-20px;margin-right:-20px;width:calc(100% + 40px);}
+  .ticker-inner{display:flex;align-items:stretch;min-height:52px;max-width:1440px;margin:0 auto;padding:0 20px;}
+  .ticker-now{display:flex;align-items:center;gap:10px;padding:0 20px 0 0;border-right:1px solid rgba(245,166,35,.15);flex-shrink:0;}
+  .ticker-dot{width:9px;height:9px;border-radius:50%;background:var(--green);animation:pulse 1.5s ease infinite;flex-shrink:0;}
+  .ticker-dot.amber{background:var(--accent);}
+  .ticker-now-label{font-family:var(--font-m);font-size:9px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;white-space:nowrap;}
+  .ticker-price-big{font-family:var(--font-d);font-size:clamp(22px,4vw,36px);font-weight:800;letter-spacing:-.02em;color:var(--accent);line-height:1;white-space:nowrap;}
+  .ticker-per-gal{font-family:var(--font-d);font-size:14px;color:var(--muted);font-weight:400;}
+  .ticker-source{font-family:var(--font-m);font-size:9px;letter-spacing:.1em;color:var(--muted);margin-top:1px;}
+  .ticker-stats{display:flex;align-items:center;gap:0;flex:1;overflow:hidden;}
+  .ticker-stat{display:flex;flex-direction:column;justify-content:center;padding:0 18px;border-right:1px solid var(--border);flex-shrink:0;}
+  .ticker-stat:last-child{border-right:none;}
+  .ticker-stat-label{font-family:var(--font-m);font-size:9px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;}
+  .ticker-stat-val{font-family:var(--font-d);font-size:20px;font-weight:700;line-height:1.1;}
+  .ticker-right{display:flex;align-items:center;gap:10px;padding-left:16px;border-left:1px solid var(--border);flex-shrink:0;margin-left:auto;}
+  .ticker-countdown{font-family:var(--font-m);font-size:10px;color:var(--muted);letter-spacing:.06em;white-space:nowrap;}
+  .ticker-countdown span{color:var(--accent);}
+  .ticker-refresh-mini{font-family:var(--font-m);font-size:10px;padding:4px 10px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap;}
+  .ticker-refresh-mini:hover{border-color:var(--accent);color:var(--accent);}
+  @media(max-width:768px){
+    .ticker-stats{display:none;}
+    .ticker-right{display:none;}
+    .ticker-now{padding-right:12px;}
+    .live-ticker{margin-left:-12px;margin-right:-12px;width:calc(100% + 24px);}
+  }
+
 </style>
 </head>
 <body>
+<!-- ══ STICKY LIVE PRICE TICKER ══ -->
+<div class="sticky-ticker" id="stickyTicker">
+  <div class="st-left">
+    <div class="st-logo">U.S. <span>Gas</span></div>
+    <div class="st-divider"></div>
+    <div>
+      <div class="st-label" id="stLabel">Today's Price</div>
+      <div class="st-price-block">
+        <div class="st-price dim" id="stPrice">—</div>
+        <div class="st-unit">/gal</div>
+      </div>
+    </div>
+    <div class="st-divider"></div>
+    <div class="st-deltas" id="stDeltas"></div>
+  </div>
+  <div class="st-right">
+    <div class="st-source loading" id="stSource">
+      <div class="st-dot pulse"></div>
+      <span id="stSourceText">Loading…</span>
+    </div>
+    <div class="st-clock" id="stClock"></div>
+    <button class="st-dismiss" onclick="dismissTicker()">✕</button>
+  </div>
+</div>
+
 <div class="wrapper">
+
+
+<!-- ═══ LIVE TICKER — always visible, sticky ═══ -->
+<div class="live-ticker" id="liveTicker">
+  <div class="ticker-inner">
+    <div class="ticker-now">
+      <div class="ticker-dot" id="tickerDot"></div>
+      <div>
+        <div class="ticker-now-label" id="tickerLabel">TODAY'S PRICE</div>
+        <div style="display:flex;align-items:baseline;gap:5px;">
+          <div class="ticker-price-big" id="tickerPrice">—</div>
+          <div class="ticker-per-gal">/gal</div>
+        </div>
+        <div class="ticker-source" id="tickerSource">Loading…</div>
+      </div>
+    </div>
+    <div class="ticker-stats" id="tickerStats"></div>
+    <div class="ticker-right">
+      <div class="ticker-countdown" id="tickerCountdown">Next refresh in <span id="countdownVal">60:00</span></div>
+      <button class="ticker-refresh-mini" onclick="manualRefresh()">↺ Now</button>
+    </div>
+  </div>
+</div>
 
 <header>
   <div>
@@ -1016,6 +1141,7 @@ async function fetchEIAWeeklyFallback() {
 }
 
 function buildWeeklyBanner() {
+  updateTicker();
   const board=document.getElementById('weeklyBanner');
   const deltas=document.getElementById('tbDeltas');
   const updated=document.getElementById('tbUpdated');
@@ -1056,6 +1182,7 @@ function buildWeeklyBanner() {
   const ts=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   updated.textContent=`Updated ${ts}`;
   board.classList.remove('loading-state');
+  updateStickyTicker();
 }
 
 function fmtDate(iso){
@@ -1338,6 +1465,7 @@ function setMode(m) {
 //  RENDER ALL
 // ═══════════════════════════════════════════════════════
 function render() {
+  updateTicker();
   buildWeeklyBanner();
   buildFuelPair();
   buildTrend();
@@ -1352,6 +1480,117 @@ function manualRefresh() {
   fetchCPI();
   fetchWeekly();
   fetchEIA();
+  startCountdown();
+}
+
+
+// ═══════════════════════════════════════════════════════
+//  STICKY TICKER
+// ═══════════════════════════════════════════════════════
+let tickerDismissed = false;
+let tickerLastUpdate = null;
+let tickerClockInterval = null;
+
+function updateStickyTicker() {
+  if (tickerDismissed) return;
+  const ticker = document.getElementById('stickyTicker');
+  const stPrice = document.getElementById('stPrice');
+  const stLabel = document.getElementById('stLabel');
+  const stSource = document.getElementById('stSource');
+  const stSourceText = document.getElementById('stSourceText');
+  const stDeltas = document.getElementById('stDeltas');
+
+  if (!WEEKLY) {
+    stPrice.textContent = '—';
+    stPrice.className = 'st-price dim';
+    return;
+  }
+
+  const { price, source, isDaily, date } = WEEKLY;
+  stPrice.textContent = fmt(price);
+  stPrice.className = 'st-price';
+
+  // Source pill
+  if (isDaily && source === 'AAA') {
+    stSource.className = 'st-source live-aaa';
+    stSourceText.textContent = 'AAA Daily — Live';
+  } else {
+    stSource.className = 'st-source live-eia';
+    stSourceText.textContent = 'EIA Weekly';
+  }
+  const dot = stSource.querySelector('.st-dot');
+  if (dot) dot.className = 'st-dot';
+
+  stLabel.textContent = isDaily ? `Today · ${fmtDate(date)}` : `Week ending ${fmtDate(date)}`;
+
+  // Delta chips
+  const ref = WEEKLY.eiaWeekPrice || price;
+  const prev = WEEKLY.eiaWeekPrev;
+  const wowD = prev ? parseFloat(pct(prev, ref)) : null;
+  const wowDollar = prev ? (ref - prev).toFixed(2) : null;
+  const yago = DATA_REG.length ? [...DATA_REG].reverse().find(d =>
+    d.year === DATA_REG[DATA_REG.length-1].year - 1 &&
+    d.month === DATA_REG[DATA_REG.length-1].month
+  ) : null;
+  const yoyD = yago ? parseFloat(pct(yago.nominal, price)) : null;
+  const latest = DATA_REG.length ? DATA_REG[DATA_REG.length-1] : null;
+  const momD = latest ? parseFloat(pct(latest.nominal, price)) : null;
+
+  function chip(lbl, val, dollar) {
+    if (val == null) return '';
+    const c = val >= 0 ? 'var(--red)' : 'var(--green)';
+    const s = val >= 0 ? '+' : '';
+    const dStr = dollar != null ? ` (${parseFloat(dollar)>=0?'+':''}$${Math.abs(parseFloat(dollar)).toFixed(2)})` : '';
+    return `<div class="st-delta"><div class="st-dlabel">${lbl}</div><div class="st-dval" style="color:${c}">${s}${val}%${dStr}</div></div>`;
+  }
+
+  stDeltas.innerHTML = [
+    chip('WoW', wowD, wowDollar),
+    chip('vs Month Avg', momD, null),
+    chip('YoY', yoyD, null),
+  ].join('<div style="width:1px;height:28px;background:var(--border);"></div>');
+
+  tickerLastUpdate = new Date();
+  startTickerClock();
+}
+
+function startTickerClock() {
+  if (tickerClockInterval) return; // already running
+  const el = document.getElementById('stClock');
+  tickerClockInterval = setInterval(() => {
+    if (!tickerLastUpdate || !el) return;
+    const secs = Math.floor((Date.now() - tickerLastUpdate) / 1000);
+    if (secs < 60) el.textContent = `Updated ${secs}s ago`;
+    else if (secs < 3600) el.textContent = `Updated ${Math.floor(secs/60)}m ago`;
+    else el.textContent = `Updated ${Math.floor(secs/3600)}h ago`;
+  }, 1000);
+}
+
+function showTicker() {
+  if (tickerDismissed) return;
+  document.getElementById('stickyTicker').classList.add('visible');
+  document.body.classList.add('ticker-visible');
+}
+
+function dismissTicker() {
+  tickerDismissed = true;
+  document.getElementById('stickyTicker').classList.remove('visible');
+  document.body.classList.remove('ticker-visible');
+}
+
+// Show ticker after user scrolls past the main price board
+function initTickerScroll() {
+  const board = document.getElementById('weeklyBanner');
+  if (!board) return;
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!tickerDismissed) {
+        if (!e.isIntersecting) showTicker();
+        else { document.getElementById('stickyTicker').classList.remove('visible'); document.body.classList.remove('ticker-visible'); }
+      }
+    });
+  }, { threshold: 0 });
+  obs.observe(board);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1364,9 +1603,112 @@ window.addEventListener('DOMContentLoaded', () => {
   fetchCPI().then(()=>{DATA_REG=buildData(BASELINE_REG);DATA_DSL=buildData(BASELINE_DSL);render();});
   fetchWeekly();
   fetchEIA();
+  startCountdown();
   setInterval(()=>{fetchWeekly();fetchEIA();}, REFRESH_MS);
   setInterval(fetchCPI, 6*60*60*1000);
+  initTickerScroll();
 });
+
+// ═══════════════════════════════════════════════════════
+//  LIVE TICKER
+// ═══════════════════════════════════════════════════════
+let countdownSecs = 3600;
+let countdownTimer = null;
+
+function updateTicker() {
+  const priceEl   = document.getElementById('tickerPrice');
+  const sourceEl  = document.getElementById('tickerSource');
+  const labelEl   = document.getElementById('tickerLabel');
+  const dotEl     = document.getElementById('tickerDot');
+  const statsEl   = document.getElementById('tickerStats');
+
+  if (!WEEKLY && (!DATA_REG || !DATA_REG.length)) {
+    priceEl.textContent = '—';
+    sourceEl.textContent = 'Loading…';
+    return;
+  }
+
+  // Price: prefer daily AAA, fallback to EIA weekly, then monthly
+  let price, sourceText, isLive = false;
+  if (WEEKLY) {
+    price = WEEKLY.price;
+    isLive = WEEKLY.isDaily;
+    sourceText = WEEKLY.isDaily
+      ? `AAA Fuel Gauge · ${fmtDate(WEEKLY.date)}`
+      : `EIA Weekly · Wk ending ${fmtDate(WEEKLY.date)}`;
+    labelEl.textContent = WEEKLY.isDaily ? "TODAY'S PRICE" : 'LATEST WEEKLY';
+    dotEl.className = WEEKLY.isDaily ? 'ticker-dot' : 'ticker-dot amber';
+  } else if (DATA_REG.length) {
+    const last = DATA_REG[DATA_REG.length - 1];
+    price = last.nominal;
+    sourceText = `EIA Monthly · ${last.label}`;
+    labelEl.textContent = 'LATEST MONTHLY';
+    dotEl.className = 'ticker-dot amber';
+  }
+
+  priceEl.textContent = price ? fmt(price) : '—';
+  sourceEl.textContent = sourceText || '—';
+
+  // Stat pills
+  const stats = [];
+  const latest = DATA_REG.length ? DATA_REG[DATA_REG.length - 1] : null;
+  const prev   = DATA_REG.length > 1 ? DATA_REG[DATA_REG.length - 2] : null;
+  const yago   = DATA_REG.length
+    ? [...DATA_REG].reverse().find(d => d.year === (latest?.year - 1) && d.month === latest?.month)
+    : null;
+
+  if (WEEKLY?.eiaWeekPrev && WEEKLY.eiaWeekPrice) {
+    const wow = parseFloat(pct(WEEKLY.eiaWeekPrev, WEEKLY.eiaWeekPrice));
+    stats.push({ label: 'WK/WK', val: wow, suffix: '%' });
+  }
+  if (latest && prev) {
+    const mom = parseFloat(pct(prev.nominal, latest.nominal));
+    stats.push({ label: 'MO/MO', val: mom, suffix: '%' });
+  }
+  if (latest && yago) {
+    const yoy = parseFloat(pct(yago.nominal, latest.nominal));
+    stats.push({ label: 'YR/YR', val: yoy, suffix: '%' });
+  }
+  // Diesel spread
+  if (DATA_DSL.length && DATA_REG.length) {
+    const dLast = DATA_DSL[DATA_DSL.length - 1];
+    const rLast = DATA_REG[DATA_REG.length - 1];
+    const spread = parseFloat((dLast.nominal - rLast.nominal).toFixed(2));
+    stats.push({ label: 'DIESEL SPREAD', val: spread, suffix: '/gal', noSign: spread < 0 });
+  }
+  // 4-week EIA weekly
+  if (WEEKLY?.eiaWeek4 && WEEKLY.eiaWeekPrice) {
+    const m4 = parseFloat(pct(WEEKLY.eiaWeek4, WEEKLY.eiaWeekPrice));
+    stats.push({ label: '4-WEEK', val: m4, suffix: '%' });
+  }
+
+  if (statsEl) {
+    statsEl.innerHTML = stats.map(s => {
+      const c = s.suffix === '/gal'
+        ? 'var(--diesel)'
+        : s.val >= 0 ? 'var(--red)' : 'var(--green)';
+      const sg = s.noSign ? '' : (s.val >= 0 ? '+' : '');
+      return `<div class="ticker-stat">
+        <div class="ticker-stat-label">${s.label}</div>
+        <div class="ticker-stat-val" style="color:${c}">${sg}${s.val}${s.suffix}</div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function startCountdown() {
+  if (countdownTimer) clearInterval(countdownTimer);
+  countdownSecs = REFRESH_MS / 1000;
+  countdownTimer = setInterval(() => {
+    countdownSecs = Math.max(0, countdownSecs - 1);
+    const m = Math.floor(countdownSecs / 60);
+    const s = countdownSecs % 60;
+    const el = document.getElementById('countdownVal');
+    if (el) el.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    if (countdownSecs === 0) countdownSecs = REFRESH_MS / 1000;
+  }, 1000);
+}
+
 </script>
 </body>
 </html>
