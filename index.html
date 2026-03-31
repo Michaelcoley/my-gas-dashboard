@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>U.S. Gasoline Prices 1985–Present | Live Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Barlow+Condensed:wght@300;400;600;700;800&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  /* ─── TOKENS ─── */
+  :root {
+    --bg:#090b0f; --surface:#111318; --surface2:#181c24; --border:#232834;
+    --accent:#f5a623; --accent2:#e8621a; --text:#e8eaf0; --muted:#6b7385;
+    --dem:rgba(59,130,246,0.13); --dem-line:#3b82f6;
+    --rep:rgba(239,68,68,0.10);  --rep-line:#ef4444;
+    --green:#22c55e; --red:#ef4444;
+    --font-d:'Barlow Condensed',sans-serif;
+    --font-b:'Barlow',sans-serif;
+    --font-m:'DM Mono',monospace;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--font-b);min-height:100vh;overflow-x:hidden;}
+  body::before{
+    content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  }
+  .wrapper{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:28px 20px 56px;}
+
+  /* ─── HEADER ─── */
+  header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:28px;padding-bottom:18px;border-bottom:1px solid var(--border);}
+  .eyebrow{font-family:var(--font-m);font-size:11px;letter-spacing:.18em;color:var(--accent);text-transform:uppercase;margin-bottom:6px;}
+  h1{font-family:var(--font-d);font-size:clamp(24px,5vw,50px);font-weight:800;letter-spacing:-.01em;line-height:1;}
+  h1 span{color:var(--accent);}
+  .subtitle{margin-top:6px;font-size:12px;color:var(--muted);font-family:var(--font-m);}
+  .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+
+  /* ─── STATUS BAR ─── */
+  .status-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+  .status-pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-m);font-size:11px;letter-spacing:.09em;border-radius:100px;padding:5px 12px;border:1px solid;}
+  .status-pill.live{color:var(--green);background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.28);}
+  .status-pill.loading{color:var(--accent);background:rgba(245,166,35,.08);border-color:rgba(245,166,35,.28);}
+  .status-pill.error{color:var(--red);background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.28);}
+  .status-pill.fallback{color:var(--muted);background:rgba(107,115,133,.08);border-color:rgba(107,115,133,.28);}
+  .status-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+  .status-dot.pulse{animation:pulse 1.6s ease infinite;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.75)}}
+  .refresh-btn{font-family:var(--font-m);font-size:11px;letter-spacing:.08em;padding:6px 14px;border-radius:100px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;transition:all .2s;}
+  .refresh-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .refresh-btn:disabled{opacity:.4;cursor:default;}
+
+  /* ─── TOGGLE ─── */
+  .toggle-row{display:flex;align-items:center;gap:8px;}
+  .toggle-label{font-family:var(--font-m);font-size:10px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;}
+  .pill-toggle{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:3px;gap:2px;}
+  .pill-btn{font-family:var(--font-m);font-size:11px;letter-spacing:.06em;padding:7px 16px;border-radius:100px;border:none;background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap;}
+  .pill-btn.active{background:var(--accent);color:#000;font-weight:600;}
+
+  /* ─── HERO ─── */
+  .price-hero{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:16px;position:relative;overflow:hidden;transition:opacity .3s;}
+  .price-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent2),var(--accent));}
+  .price-hero.loading-state{opacity:.5;}
+  .hero-label{font-family:var(--font-m);font-size:10px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;}
+  .hero-price{font-family:var(--font-d);font-size:clamp(42px,7vw,76px);font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--accent);}
+  .hero-unit{font-family:var(--font-d);font-size:20px;font-weight:400;color:var(--muted);margin-left:4px;}
+  .hero-meta{font-family:var(--font-m);font-size:11px;color:var(--muted);margin-top:4px;}
+  .hero-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px;}
+  .hero-stat-label{font-family:var(--font-m);font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;}
+  .hero-stat-val{font-family:var(--font-d);font-size:24px;font-weight:700;line-height:1.15;}
+  .hero-stat-sub{font-family:var(--font-m);font-size:10px;color:var(--muted);}
+
+  /* ─── WEEKLY PRICE BANNER ─── */
+  .weekly-banner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;background:var(--surface2);border:1px solid rgba(245,166,35,.22);border-radius:14px;padding:16px 24px;margin-bottom:12px;position:relative;overflow:hidden;}
+  .weekly-banner::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(245,166,35,.06) 0%,transparent 60%);pointer-events:none;}
+  .weekly-banner.loading-state{opacity:.45;}
+  .wb-left{display:flex;flex-direction:column;gap:2px;}
+  .wb-eyebrow{font-family:var(--font-m);font-size:10px;letter-spacing:.16em;color:var(--accent);text-transform:uppercase;margin-bottom:2px;}
+  .wb-price-row{display:flex;align-items:baseline;gap:8px;}
+  .wb-price{font-family:var(--font-d);font-size:clamp(36px,6vw,64px);font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--accent);}
+  .wb-unit{font-family:var(--font-d);font-size:18px;font-weight:400;color:var(--muted);}
+  .wb-meta{font-family:var(--font-m);font-size:11px;color:var(--muted);margin-top:3px;}
+  .wb-right{display:flex;gap:20px;flex-wrap:wrap;align-items:center;}
+  .wb-stat{}
+  .wb-stat-label{font-family:var(--font-m);font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;}
+  .wb-stat-val{font-family:var(--font-d);font-size:22px;font-weight:700;line-height:1.15;}
+  .wb-stat-sub{font-family:var(--font-m);font-size:10px;color:var(--muted);}
+  .wb-divider{width:1px;background:var(--border);align-self:stretch;flex-shrink:0;min-height:40px;}
+  .wb-source-tag{font-family:var(--font-m);font-size:10px;letter-spacing:.08em;padding:3px 9px;border-radius:4px;background:rgba(245,166,35,.1);color:var(--accent);border:1px solid rgba(245,166,35,.2);white-space:nowrap;}
+
+  /* ─── STATS STRIP ─── */
+  .stats-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(144px,1fr));gap:10px;margin-bottom:20px;}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 15px;position:relative;overflow:hidden;}
+  .stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);}
+  .stat-card.dem-card::after{background:var(--dem-line);}
+  .stat-card.rep-card::after{background:var(--rep-line);}
+  .stat-label{font-family:var(--font-m);font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;}
+  .stat-value{font-family:var(--font-d);font-size:23px;font-weight:700;color:var(--text);line-height:1;}
+  .stat-sub{font-family:var(--font-m);font-size:10px;color:var(--muted);margin-top:2px;}
+  .stat-delta{display:inline-block;font-family:var(--font-m);font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;margin-top:4px;}
+  .delta-pos{background:rgba(239,68,68,.12);color:var(--red);}
+  .delta-neg{background:rgba(34,197,94,.12);color:var(--green);}
+
+  /* ─── CHART ─── */
+  .chart-outer{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 18px 14px;margin-bottom:20px;}
+  .chart-header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
+  .chart-title{font-family:var(--font-d);font-size:14px;font-weight:600;letter-spacing:.04em;}
+  .chart-badge{font-family:var(--font-m);font-size:10px;letter-spacing:.1em;padding:4px 10px;border-radius:4px;background:rgba(245,166,35,.1);color:var(--accent);border:1px solid rgba(245,166,35,.22);text-transform:uppercase;}
+  .chart-wrap{position:relative;height:clamp(260px,40vw,450px);}
+  .legend-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);align-items:center;}
+  .legend-item{display:flex;align-items:center;gap:6px;font-family:var(--font-m);font-size:11px;color:var(--muted);}
+  .legend-swatch{width:22px;height:8px;border-radius:2px;flex-shrink:0;}
+
+  /* ─── PRES CARDS ─── */
+  .section-title{font-family:var(--font-d);font-size:16px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;}
+  .pres-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:28px;}
+  .pres-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 15px;display:flex;gap:10px;align-items:flex-start;transition:transform .2s,border-color .2s;position:relative;overflow:hidden;}
+  .pres-card:hover{transform:translateY(-2px);border-color:#2e3650;}
+  .pres-card.current-pres{border-color:rgba(34,197,94,.35);}
+  .pres-card.current-pres::after{content:'CURRENT';position:absolute;top:8px;right:9px;font-family:var(--font-m);font-size:9px;letter-spacing:.12em;color:var(--green);background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);border-radius:3px;padding:2px 6px;}
+  .pres-party-bar{width:4px;border-radius:2px;align-self:stretch;flex-shrink:0;}
+  .party-R{background:var(--red);}
+  .party-D{background:var(--dem-line);}
+  .pres-info{flex:1;min-width:0;}
+  .pres-name{font-family:var(--font-d);font-size:15px;font-weight:700;color:var(--text);letter-spacing:.02em;}
+  .pres-term{font-family:var(--font-m);font-size:10px;color:var(--muted);letter-spacing:.07em;margin-top:2px;}
+  .pres-prices{display:flex;gap:13px;margin-top:7px;}
+  .pres-price-label{font-family:var(--font-m);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;}
+  .pres-price-val{font-family:var(--font-d);font-size:18px;font-weight:600;color:var(--text);line-height:1.1;}
+  .pres-delta-badge{font-family:var(--font-d);font-size:20px;font-weight:800;padding:5px 9px;border-radius:7px;align-self:center;flex-shrink:0;letter-spacing:-.02em;}
+  .badge-pos{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.18);}
+  .badge-neg{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.18);}
+
+  /* ─── LOADING OVERLAY ─── */
+  .chart-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(9,11,15,.7);border-radius:10px;z-index:10;font-family:var(--font-m);font-size:12px;color:var(--accent);letter-spacing:.12em;gap:10px;}
+  .spin{width:16px;height:16px;border:2px solid rgba(245,166,35,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .chart-loading.hidden{display:none;}
+
+  /* ─── FOOTER ─── */
+  footer{border-top:1px solid var(--border);padding-top:20px;display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;}
+  .footer-sources,.footer-note{font-family:var(--font-m);font-size:10px;color:var(--muted);line-height:1.9;letter-spacing:.04em;max-width:480px;}
+  .footer-sources a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(245,166,35,.3);}
+  .footer-sources a:hover{border-bottom-color:var(--accent);}
+
+  @media(max-width:600px){
+    .wrapper{padding:16px 13px 44px;}
+    h1{font-size:28px;}
+    .price-hero{grid-template-columns:1fr;}
+    .pres-grid,.stats-strip{grid-template-columns:1fr 1fr;}
+    .pres-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<!-- HEADER -->
+<header>
+  <div>
+    <div class="eyebrow">EIA Open Data API · BLS CPI-U · Live Refresh</div>
+    <h1>U.S. <span>Gas Prices</span><br>1985 – Present</h1>
+    <div class="subtitle">Regular Unleaded · National Average · Monthly $/gal · EIA EMM_EPMR_PTE_NUS_DPG</div>
+  </div>
+  <div class="header-right">
+    <div class="status-bar">
+      <div id="statusPill" class="status-pill loading">
+        <span class="status-dot pulse"></span>
+        <span id="statusText">Fetching EIA data…</span>
+      </div>
+      <button class="refresh-btn" id="refreshBtn" onclick="manualRefresh()" disabled>↺ Refresh</button>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Mode:</span>
+      <div class="pill-toggle">
+        <button class="pill-btn active" id="btnNominal" onclick="setMode('nominal')">Nominal</button>
+        <button class="pill-btn" id="btnAdjusted" onclick="setMode('adjusted')">Inflation-Adj. (2026$)</button>
+      </div>
+      <div style="font-family:var(--font-m);font-size:10px;color:var(--muted);text-align:right;letter-spacing:.07em;">
+        CPI base: <span id="cpiBaseChip" style="color:var(--accent)">Feb 2026 · 326.785</span> · <a href="https://www.bls.gov/cpi/" target="_blank" style="color:var(--muted);text-decoration:none;border-bottom:1px solid #333">BLS</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- TODAY'S PRICE BANNER (AAA Daily via CF Worker /daily-price) -->
+<div class="weekly-banner loading-state" id="weeklyBanner">
+  <div class="wb-left">
+    <div class="wb-eyebrow">Today's National Average — AAA Daily</div>
+    <div class="wb-price-row"><span class="wb-price" style="color:var(--muted)">—</span><span class="wb-unit">/gal</span></div>
+    <div class="wb-meta">Fetching today's price…</div>
+  </div>
+</div>
+
+<!-- HERO (Monthly Average) -->
+<div class="price-hero loading-state" id="priceHero">
+  <div><div class="hero-label">Current Monthly Average</div><div class="hero-price" style="color:var(--muted)">—</div></div>
+  <div class="hero-stats"></div>
+</div>
+
+<!-- STATS -->
+<div class="stats-strip" id="statsStrip"></div>
+
+<!-- CHART -->
+<div class="chart-outer">
+  <div class="chart-header">
+    <div class="chart-title">Monthly Average Retail Price — Regular Unleaded, National Average</div>
+    <div class="chart-badge" id="modeBadge">Nominal Prices</div>
+  </div>
+  <div class="chart-wrap">
+    <canvas id="gasChart"></canvas>
+    <div class="chart-loading" id="chartLoading">
+      <div class="spin"></div>LOADING EIA DATA…
+    </div>
+  </div>
+  <div class="legend-row">
+    <div class="legend-item"><div class="legend-swatch" style="background:var(--accent)"></div><span>Gas Price ($/gal)</span></div>
+    <div class="legend-item"><div class="legend-swatch" style="background:var(--dem);border:1px solid var(--dem-line)"></div><span>Democratic President</span></div>
+    <div class="legend-item"><div class="legend-swatch" style="background:var(--rep);border:1px solid var(--rep-line)"></div><span>Republican President</span></div>
+  </div>
+</div>
+
+<!-- PRES CARDS -->
+<div class="section-title">Presidential Term Analysis</div>
+<div class="pres-grid" id="presGrid"></div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-sources">
+    <strong style="color:var(--text)">Live Data Sources</strong><br>
+    AAA Daily: <a href="https://gasprices.aaa.com/" target="_blank">gasprices.aaa.com</a> · via Cloudflare Worker <code>/daily-price</code> · Today's price<br>
+    EIA Weekly: <a href="https://api.eia.gov/v2/petroleum/pri/gnd/data/" target="_blank">EIA API v2</a> · EMM_EPMR_PTE_NUS_DPG (weekly) · WoW delta<br>
+    EIA Monthly: <a href="https://www.eia.gov/dnav/pet/hist/leafhandler.ashx?n=pet&s=emm_epmr_pte_nus_dpg&f=m" target="_blank">EMM_EPMR_PTE_NUS_DPG</a> · Regular All Formulations, National<br>
+    BLS CPI-U: <a href="https://www.bls.gov/cpi/" target="_blank">bls.gov/cpi</a> · CUUR0000SA0 · latest BLS CPI-U base<br>
+    Free EIA API key: <a href="https://www.eia.gov/opendata/" target="_blank">eia.gov/opendata</a>
+  </div>
+  <div class="footer-note">
+    <strong style="color:var(--text)">Auto-Refresh</strong><br>
+    Live data fetched from EIA API on page load and every 60 min.<br>
+    1985–1990: Annual EIA averages (EIA monthly series begins Sep 1990).<br>
+    Presidential % = nominal price at term start vs. latest/end month.<br>
+    Inflation adjustment uses annual BLS CPI-U multipliers (live CPI base).
+  </div>
+</footer>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//  ★ CONFIGURATION — swap in your free EIA key from eia.gov/opendata
+// ═══════════════════════════════════════════════════════════════════
+const EIA_API_KEY = 'A21nFg9BXSogtCDtc2flIEw9pKMKqJ5ImSrLoPg7';
+
+// Auto-refresh interval (ms). Default: 60 minutes.
+const REFRESH_INTERVAL_MS = 60 * 60 * 1000;
+
+// ═══════════════════════════════════════════════════════════════════
+//  BLS CPI-U — RAW ANNUAL AVG INDEX VALUES + LIVE BASE
+//  Source: BLS CUUR0000SA0 · Base: latest monthly CPI via /cpi-data
+// ═══════════════════════════════════════════════════════════════════
+// Raw annual average CPI-U index values (BLS CUUR0000SA0, 1982-84=100)
+// Multipliers computed dynamically via getCPI() against live base.
+// Updated on load via /cpi-data worker; falls back to Feb 2026 (326.785).
+let CPI_INDEX = {
+  1985:107.6,  1986:109.6,  1987:113.6,  1988:118.3,  1989:124.0,
+  1990:130.7,  1991:136.2,  1992:140.3,  1993:144.5,  1994:148.2,
+  1995:152.4,  1996:156.9,  1997:160.5,  1998:163.0,  1999:166.6,
+  2000:172.2,  2001:177.1,  2002:179.9,  2003:184.0,  2004:188.9,
+  2005:195.3,  2006:201.6,  2007:207.342, 2008:215.303, 2009:214.537,
+  2010:218.056, 2011:224.939, 2012:229.594, 2013:232.957, 2014:236.736,
+  2015:237.017, 2016:240.007, 2017:245.120, 2018:251.107, 2019:255.657,
+  2020:258.811, 2021:270.970, 2022:292.655, 2023:304.702, 2024:314.175,
+  2025:320.308, // est. annual avg — Oct/Nov missing (appropriations lapse)
+  2026:326.785, // Feb 2026 (latest BLS release); /cpi-data worker updates this
+};
+let CPI_BASE_VALUE  = 326.785;   // Feb 2026 — updated live by fetchCPIData()
+let CPI_BASE_LABEL  = 'Feb 2026';
+let CPI_BASE_PERIOD = '2026-02';
+
+function getCPI(year) {
+  const idx = CPI_INDEX[year] || CPI_INDEX[2026];
+  return parseFloat((CPI_BASE_VALUE / idx).toFixed(4));
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  HARDCODED HISTORICAL BASELINE
+//  EIA monthly series EMM_EPMR_PTE_NUS_DPG
+//  1985–1990: Annual EIA averages (monthly series unavailable pre-1991)
+//  1991–Feb 2026: EIA official monthly data (retrieved 3/17/2026)
+//  Mar 2026: AAA $4.018 (live data will override this on fetch)
+// ═══════════════════════════════════════════════════════════════════
+const BASELINE = {
+  1985:[1.196,1.196,1.196,1.196,1.196,1.196,1.196,1.196,1.196,1.196,1.196,1.196],
+  1986:[0.857,0.857,0.857,0.857,0.857,0.857,0.857,0.857,0.857,0.857,0.857,0.857],
+  1987:[0.900,0.900,0.900,0.900,0.900,0.900,0.900,0.900,0.900,0.900,0.900,0.900],
+  1988:[0.900,0.900,0.900,0.900,0.900,0.900,0.900,0.900,0.900,0.900,0.900,0.900],
+  1989:[1.026,1.026,1.026,1.026,1.026,1.026,1.026,1.026,1.026,1.026,1.026,1.026],
+  1990:[1.149,1.149,1.149,1.149,1.149,1.149,1.149,1.149,1.258,1.335,1.324,1.179],
+  1991:[1.094,1.094,1.040,1.076,1.126,1.128,1.096,1.115,1.109,1.088,1.099,1.076],
+  1992:[1.022,1.006,1.013,1.052,1.107,1.145,1.137,1.122,1.122,1.114,1.111,1.078],
+  1993:[1.062,1.054,1.052,1.078,1.100,1.097,1.078,1.062,1.050,1.092,1.066,1.014],
+  1994:[0.998,1.009,1.008,1.027,1.047,1.078,1.106,1.155,1.144,1.114,1.116,1.091],
+  1995:[1.082,1.073,1.072,1.111,1.178,1.192,1.154,1.123,1.111,1.087,1.062,1.071],
+  1996:[1.090,1.089,1.137,1.231,1.279,1.256,1.227,1.207,1.202,1.204,1.232,1.235],
+  1997:[1.236,1.230,1.205,1.199,1.200,1.198,1.174,1.224,1.231,1.197,1.171,1.131],
+  1998:[1.086,1.049,1.017,1.030,1.064,1.064,1.055,1.026,1.009,1.019,0.995,0.945],
+  1999:[0.939,0.921,0.982,1.131,1.131,1.114,1.158,1.221,1.256,1.244,1.251,1.273],
+  2000:[1.289,1.377,1.516,1.465,1.487,1.633,1.551,1.465,1.550,1.532,1.517,1.443],
+  2001:[1.447,1.450,1.409,1.552,1.702,1.616,1.421,1.421,1.522,1.315,1.171,1.086],
+  2002:[1.107,1.114,1.249,1.397,1.392,1.382,1.397,1.396,1.400,1.445,1.419,1.386],
+  2003:[1.458,1.613,1.693,1.589,1.497,1.493,1.513,1.620,1.679,1.564,1.512,1.479],
+  2004:[1.572,1.648,1.736,1.798,1.983,1.969,1.911,1.878,1.870,2.000,1.979,1.841],
+  2005:[1.831,1.910,2.079,2.243,2.161,2.156,2.290,2.486,2.903,2.717,2.257,2.185],
+  2006:[2.316,2.280,2.425,2.742,2.907,2.885,2.981,2.952,2.555,2.245,2.229,2.313],
+  2007:[2.240,2.278,2.563,2.845,3.146,3.056,2.965,2.786,2.803,2.803,3.080,3.018],
+  2008:[3.043,3.028,3.244,3.458,3.766,4.054,4.062,3.779,3.703,3.051,2.147,1.687],
+  2009:[1.788,1.923,1.959,2.049,2.266,2.631,2.527,2.616,2.554,2.551,2.651,2.607],
+  2010:[2.715,2.644,2.772,2.848,2.836,2.732,2.729,2.730,2.705,2.801,2.859,2.993],
+  2011:[3.095,3.211,3.561,3.800,3.906,3.680,3.650,3.639,3.611,3.448,3.384,3.266],
+  2012:[3.380,3.579,3.852,3.900,3.732,3.539,3.439,3.722,3.849,3.746,3.452,3.310],
+  2013:[3.319,3.670,3.711,3.570,3.615,3.626,3.591,3.574,3.532,3.344,3.243,3.276],
+  2014:[3.313,3.356,3.533,3.661,3.673,3.692,3.611,3.487,3.406,3.171,2.912,2.543],
+  2015:[2.116,2.216,2.464,2.469,2.718,2.802,2.794,2.636,2.365,2.290,2.158,2.038],
+  2016:[1.949,1.764,1.969,2.113,2.268,2.366,2.239,2.178,2.219,2.249,2.182,2.254],
+  2017:[2.349,2.304,2.325,2.417,2.391,2.347,2.300,2.380,2.645,2.505,2.564,2.477],
+  2018:[2.555,2.587,2.591,2.757,2.901,2.891,2.849,2.836,2.836,2.860,2.647,2.366],
+  2019:[2.248,2.309,2.516,2.798,2.859,2.716,2.740,2.621,2.592,2.627,2.598,2.555],
+  2020:[2.548,2.442,2.234,1.841,1.870,2.082,2.183,2.182,2.183,2.158,2.108,2.195],
+  2021:[2.334,2.501,2.810,2.858,2.985,3.064,3.136,3.158,3.175,3.291,3.395,3.307],
+  2022:[3.315,3.517,4.222,4.109,4.444,4.929,4.559,3.975,3.700,3.815,3.685,3.210],
+  2023:[3.339,3.389,3.422,3.603,3.555,3.571,3.597,3.840,3.836,3.613,3.318,3.134],
+  2024:[3.075,3.212,3.426,3.611,3.603,3.455,3.484,3.389,3.214,3.137,3.053,3.018],
+  2025:[3.076,3.121,3.096,3.171,3.150,3.150,3.125,3.133,3.166,3.060,3.050,2.894],
+  2026:[2.809,2.908,4.018], // Jan–Feb: EIA; Mar: AAA 3/31/26 — API will override
+};
+
+// ═══════════════════════════════════════════════════════════════════
+//  PRESIDENTIAL TERMS
+// ═══════════════════════════════════════════════════════════════════
+const PRESIDENTS = [
+  {name:'Ronald Reagan',    short:'Reagan',   party:'R', sy:1985,sm:1, ey:1989,em:1},
+  {name:'George H.W. Bush', short:'Bush Sr.', party:'R', sy:1989,sm:1, ey:1993,em:1},
+  {name:'Bill Clinton',     short:'Clinton',  party:'D', sy:1993,sm:1, ey:2001,em:1},
+  {name:'George W. Bush',   short:'Bush Jr.', party:'R', sy:2001,sm:1, ey:2009,em:1},
+  {name:'Barack Obama',     short:'Obama',    party:'D', sy:2009,sm:1, ey:2017,em:1},
+  {name:'Donald Trump',     short:'Trump I',  party:'R', sy:2017,sm:1, ey:2021,em:1},
+  {name:'Joe Biden',        short:'Biden',    party:'D', sy:2021,sm:1, ey:2025,em:1},
+  {name:'Donald Trump',     short:'Trump II', party:'R', sy:2025,sm:1, ey:null,  em:null, isCurrent:true},
+];
+
+// ═══════════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════════
+const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+let DATA = [];       // flat monthly array, rebuilt after each fetch
+let mode = 'nominal';
+let chart = null;
+let apiStatus = 'loading'; // 'loading' | 'live' | 'error' | 'fallback'
+let lastFetchTime = null;
+let WEEKLY = null;   // { price, period, weekEndDate, prevPrice, prevPeriod }
+
+// ═══════════════════════════════════════════════════════════════════
+//  BUILD DATA ARRAY from a year→months map
+// ═══════════════════════════════════════════════════════════════════
+function buildDataArray(yearMap) {
+  const arr = [];
+  const years = Object.keys(yearMap).map(Number).sort((a,b)=>a-b);
+  for (const year of years) {
+    const months = yearMap[year];
+    months.forEach((nom, mi) => {
+      if (nom == null) return;
+      const cpi = getCPI(year);
+      arr.push({
+        label: `${MN[mi]} ${year}`,
+        year, month: mi+1,
+        nominal: nom,
+        adjusted: parseFloat((nom * cpi).toFixed(3)),
+        cpi,
+        isAnnualAvg: year <= 1990,
+        isLive: false, // will be flagged on API rows
+      });
+    });
+  }
+  return arr;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  EIA API FETCH
+//  Endpoint: https://api.eia.gov/v2/petroleum/pri/gnd/data/
+//  Series:   EMM_EPMR_PTE_NUS_DPG (Regular All Formulations, National)
+//  Fetches the latest 48 months and merges with baseline
+// ═══════════════════════════════════════════════════════════════════
+async function fetchEIA() {
+  setStatus('loading');
+  document.getElementById('refreshBtn').disabled = true;
+  document.getElementById('priceHero').classList.add('loading-state');
+  document.getElementById('chartLoading').classList.remove('hidden');
+
+  const url = `https://api.eia.gov/v2/petroleum/pri/gnd/data/` +
+    `?api_key=${EIA_API_KEY}` +
+    `&frequency=monthly` +
+    `&data[0]=value` +
+    `&facets[series][]=EMM_EPMR_PTE_NUS_DPG` +
+    `&sort[0][column]=period` +
+    `&sort[0][direction]=desc` +
+    `&length=48`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+
+    // EIA v2 returns { response: { data: [ {period:"2026-03", value:4.018}, ... ] } }
+    const rows = json?.response?.data;
+    if (!Array.isArray(rows) || rows.length === 0) throw new Error('Empty API response');
+
+    // Deep-copy baseline
+    const merged = {};
+    for (const [yr, arr] of Object.entries(BASELINE)) {
+      merged[parseInt(yr)] = [...arr];
+    }
+
+    // Overlay API data (covers last 48 months, overrides hardcoded values)
+    let newestYear = 0, newestMonth = 0;
+    for (const row of rows) {
+      if (row.value == null || row.value === '') continue;
+      const [yrStr, moStr] = row.period.split('-');
+      const yr = parseInt(yrStr);
+      const mo = parseInt(moStr); // 1-based
+      if (!merged[yr]) merged[yr] = new Array(12).fill(null);
+      merged[yr][mo-1] = parseFloat(parseFloat(row.value).toFixed(3));
+      // Track the most recent data point
+      if (yr > newestYear || (yr === newestYear && mo > newestMonth)) {
+        newestYear = yr; newestMonth = mo;
+      }
+    }
+
+    // Mark the latest data point as live
+    DATA = buildDataArray(merged);
+    const latestIdx = DATA.findIndex(d => d.year === newestYear && d.month === newestMonth);
+    if (latestIdx >= 0) DATA[latestIdx].isLive = true;
+
+    lastFetchTime = new Date();
+    apiStatus = 'live';
+    setStatus('live');
+
+  } catch(err) {
+    console.warn('EIA API fetch failed:', err.message);
+    // Fall back to hardcoded baseline
+    DATA = buildDataArray(BASELINE);
+    const last = DATA[DATA.length-1];
+    if (last) last.isLive = true; // mark last hardcoded point as "latest known"
+    apiStatus = EIA_API_KEY === 'YOUR_EIA_API_KEY' ? 'fallback' : 'error';
+    setStatus(apiStatus, err.message);
+  }
+
+  document.getElementById('chartLoading').classList.add('hidden');
+  document.getElementById('priceHero').classList.remove('loading-state');
+  document.getElementById('refreshBtn').disabled = false;
+
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  LIVE CPI FETCH
+//  GET /cpi-data (Cloudflare Pages Function → BLS API v1)
+//  Updates CPI_BASE_VALUE, CPI_BASE_LABEL, CPI_INDEX with latest data,
+//  then rebuilds the DATA array so all inflation-adjusted values recompute.
+// ═══════════════════════════════════════════════════════════════════
+async function fetchCPIData() {
+  try {
+    const res = await fetch('/cpi-data');
+    if (!res.ok) throw new Error(`CPI worker HTTP ${res.status}`);
+    const json = await res.json();
+
+    // Update global CPI base
+    CPI_BASE_VALUE  = json.latestValue;    // e.g. 326.785
+    CPI_BASE_LABEL  = json.baseLabel;      // e.g. "Feb 2026"
+    CPI_BASE_PERIOD = json.latestPeriod;   // e.g. "2026-02"
+
+    // Merge any updated annual averages from BLS API
+    if (json.annualAvgs) {
+      Object.assign(CPI_INDEX, json.annualAvgs);
+    }
+
+    // Update the 2026 index entry to match the latest monthly value
+    const baseYear = parseInt(json.latestPeriod.split('-')[0]);
+    CPI_INDEX[baseYear] = json.latestValue;
+
+    // Update toggle button label
+    document.getElementById('btnAdjusted').textContent =
+      `Inflation-Adj. (${CPI_BASE_LABEL}$)`;
+
+    console.log(`CPI updated: base = ${CPI_BASE_LABEL} = ${CPI_BASE_VALUE}`);
+    // Update the visible CPI base chip
+    const chip = document.getElementById('cpiBaseChip');
+    if (chip) chip.textContent = `${CPI_BASE_LABEL} · ${CPI_BASE_VALUE.toFixed(3)}`;
+    // Update toggle button label
+    document.getElementById('btnAdjusted').textContent =
+      `Inflation-Adj. (${CPI_BASE_LABEL}$)`;
+  } catch(err) {
+    console.warn('CPI fetch failed, using hardcoded Feb 2026 base:', err.message);
+    // Fallback stays at Feb 2026 = 326.785 (already seeded)
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  TODAY'S PRICE FETCH
+//  Primary:  GET /daily-price  (Cloudflare Pages Function → AAA daily)
+//  Fallback: EIA weekly API    (updates every Monday)
+// ═══════════════════════════════════════════════════════════════════
+async function fetchWeekly() {
+  const banner = document.getElementById('weeklyBanner');
+  banner.classList.add('loading-state');
+
+  // ── Try Cloudflare Worker first (AAA daily) ──
+  try {
+    const res = await fetch('/daily-price');
+    if (!res.ok) throw new Error(`Worker HTTP ${res.status}`);
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+
+    WEEKLY = {
+      price:       json.price,
+      formatted:   json.formatted,
+      date:        json.date,          // "2026-03-31"
+      source:      'AAA',
+      sourceLabel: `AAA · ${formatDisplayDate(json.date)}`,
+      isDaily:     true,
+    };
+
+    // Also fire the EIA weekly for the WoW delta while we're here
+    await enrichWithEIAWeekly();
+
+    banner.classList.remove('loading-state');
+    buildWeeklyBanner();
+    return;
+
+  } catch (err) {
+    console.warn('AAA daily fetch failed, trying EIA weekly:', err.message);
+  }
+
+  // ── Fallback: EIA weekly API ──
+  await fetchEIAWeeklyFallback();
+  banner.classList.remove('loading-state');
+  buildWeeklyBanner();
+}
+
+async function enrichWithEIAWeekly() {
+  // Fetch EIA weekly to get WoW delta alongside the AAA daily price
+  try {
+    const url = `https://api.eia.gov/v2/petroleum/pri/gnd/data/` +
+      `?api_key=${EIA_API_KEY}` +
+      `&frequency=weekly&data[0]=value` +
+      `&facets[series][]=EMM_EPMR_PTE_NUS_DPG` +
+      `&sort[0][column]=period&sort[0][direction]=desc&length=5`;
+    const res  = await fetch(url);
+    const json = await res.json();
+    const rows = (json?.response?.data || []).filter(r => r.value != null && r.value !== '');
+    if (rows.length >= 2) {
+      WEEKLY.eiaWeekPrice  = parseFloat(rows[0].value);
+      WEEKLY.eiaWeekPeriod = rows[0].period;
+      WEEKLY.eiaWeekPrev   = parseFloat(rows[1].value);
+      WEEKLY.eiaWeekPrevP  = rows[1].period;
+      WEEKLY.eiaWeek4      = rows[4] ? parseFloat(rows[4].value) : null;
+      WEEKLY.eiaWeek4P     = rows[4] ? rows[4].period : null;
+    }
+  } catch(e) { /* non-fatal */ }
+}
+
+async function fetchEIAWeeklyFallback() {
+  try {
+    const url = `https://api.eia.gov/v2/petroleum/pri/gnd/data/` +
+      `?api_key=${EIA_API_KEY}` +
+      `&frequency=weekly&data[0]=value` +
+      `&facets[series][]=EMM_EPMR_PTE_NUS_DPG` +
+      `&sort[0][column]=period&sort[0][direction]=desc&length=5`;
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error(`EIA HTTP ${res.status}`);
+    const json = await res.json();
+    const rows = (json?.response?.data || []).filter(r => r.value != null && r.value !== '');
+    if (!rows.length) throw new Error('No EIA weekly data');
+
+    WEEKLY = {
+      price:          parseFloat(rows[0].value),
+      formatted:      `$${parseFloat(rows[0].value).toFixed(3)}`,
+      date:           rows[0].period,
+      source:         'EIA',
+      sourceLabel:    `EIA Weekly · Wk ending ${formatWeekDate(rows[0].period)}`,
+      isDaily:        false,
+      eiaWeekPrice:   parseFloat(rows[0].value),
+      eiaWeekPeriod:  rows[0].period,
+      eiaWeekPrev:    rows[1] ? parseFloat(rows[1].value) : null,
+      eiaWeekPrevP:   rows[1] ? rows[1].period : null,
+      eiaWeek4:       rows[4] ? parseFloat(rows[4].value) : null,
+      eiaWeek4P:      rows[4] ? rows[4].period : null,
+    };
+  } catch (err) {
+    console.warn('EIA weekly fallback failed:', err.message);
+    WEEKLY = null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  DAILY/WEEKLY BANNER RENDER
+// ═══════════════════════════════════════════════════════════════════
+function buildWeeklyBanner() {
+  const el = document.getElementById('weeklyBanner');
+  if (!WEEKLY) {
+    el.innerHTML = `
+      <div class="wb-left">
+        <div class="wb-eyebrow">Today's National Average</div>
+        <div class="wb-price-row"><span class="wb-price" style="color:var(--muted)">—</span><span class="wb-unit">/gal</span></div>
+        <div class="wb-meta" style="color:var(--red)">Price data unavailable · Check back shortly</div>
+      </div>`;
+    return;
+  }
+
+  const { price, sourceLabel, isDaily } = WEEKLY;
+
+  // WoW delta — prefer EIA weekly context if available
+  const refPrice  = WEEKLY.eiaWeekPrice  || price;
+  const prevPrice = WEEKLY.eiaWeekPrev   || null;
+  const prevLabel = WEEKLY.eiaWeekPrevP  ? formatWeekDate(WEEKLY.eiaWeekPrevP) : null;
+  const price4    = WEEKLY.eiaWeek4      || null;
+  const label4    = WEEKLY.eiaWeek4P     ? formatWeekDate(WEEKLY.eiaWeek4P)    : null;
+
+  const wowDelta  = prevPrice ? parseFloat(pct(prevPrice, refPrice)) : null;
+  const wowDollar = prevPrice ? (refPrice - prevPrice).toFixed(2)    : null;
+  const m4Delta   = price4    ? parseFloat(pct(price4,   refPrice))  : null;
+
+  // Month-over-month vs latest monthly EIA
+  const latestMonthly = DATA.length ? DATA[DATA.length-1] : null;
+  const momDelta = latestMonthly ? parseFloat(pct(latestMonthly.nominal, price)) : null;
+
+  const wowColor = wowDelta == null ? 'var(--text)' : wowDelta >= 0 ? 'var(--red)' : 'var(--green)';
+  const m4Color  = m4Delta  == null ? 'var(--text)' : m4Delta  >= 0 ? 'var(--red)' : 'var(--green)';
+  const momColor = momDelta == null ? 'var(--text)' : momDelta >= 0 ? 'var(--red)' : 'var(--green)';
+
+  el.innerHTML = `
+    <div class="wb-left">
+      <div class="wb-eyebrow">${isDaily ? "Today's" : 'Latest Weekly'} National Average · ${sourceLabel}</div>
+      <div class="wb-price-row">
+        <span class="wb-price">${fmt(price)}</span>
+        <span class="wb-unit">/gal</span>
+      </div>
+      <div class="wb-meta">Regular Unleaded · National Average · ${isDaily ? 'AAA Fuel Gauge Report (Daily)' : 'EIA (Weekly)'}</div>
+    </div>
+    <div class="wb-right">
+      ${wowDelta != null ? `
+      <div class="wb-stat">
+        <div class="wb-stat-label">Week-over-Week</div>
+        <div class="wb-stat-val" style="color:${wowColor}">${wowDelta >= 0 ? '+' : ''}${wowDelta}%</div>
+        <div class="wb-stat-sub">${wowDollar != null ? (parseFloat(wowDollar)>=0?'+':'')+fmt(Math.abs(parseFloat(wowDollar)))+' · ' : ''}${prevLabel || ''}</div>
+      </div>
+      <div class="wb-divider"></div>` : ''}
+      ${m4Delta != null ? `
+      <div class="wb-stat">
+        <div class="wb-stat-label">4-Week Change</div>
+        <div class="wb-stat-val" style="color:${m4Color}">${m4Delta >= 0 ? '+' : ''}${m4Delta}%</div>
+        <div class="wb-stat-sub">vs. ${label4 || '—'}</div>
+      </div>
+      <div class="wb-divider"></div>` : ''}
+      ${momDelta != null ? `
+      <div class="wb-stat">
+        <div class="wb-stat-label">vs. Latest Monthly Avg</div>
+        <div class="wb-stat-val" style="color:${momColor}">${momDelta >= 0 ? '+' : ''}${momDelta}%</div>
+        <div class="wb-stat-sub">EIA ${latestMonthly.label}: ${fmt(latestMonthly.nominal)}</div>
+      </div>
+      <div class="wb-divider"></div>` : ''}
+      <div class="wb-source-tag">${isDaily ? '★ Daily' : 'Weekly'}</div>
+    </div>`;
+}
+
+function formatWeekDate(period) {
+  if (!period) return '—';
+  try {
+    const d = new Date(period + 'T12:00:00');
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch { return period; }
+}
+
+function formatDisplayDate(iso) {
+  if (!iso) return '—';
+  try {
+    const d = new Date(iso + 'T12:00:00');
+    return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  } catch { return iso; }
+}
+
+
+function setStatus(s, errMsg) {
+  const pill = document.getElementById('statusPill');
+  const txt  = document.getElementById('statusText');
+  pill.className = `status-pill ${s}`;
+  const dot = pill.querySelector('.status-dot');
+
+  if (s === 'live') {
+    dot.className = 'status-dot';
+    const t = lastFetchTime;
+    const ts = t ? `${t.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}` : '';
+    txt.textContent = `EIA Live · Updated ${ts}`;
+  } else if (s === 'loading') {
+    dot.className = 'status-dot pulse';
+    txt.textContent = 'Fetching EIA data…';
+  } else if (s === 'error') {
+    dot.className = 'status-dot';
+    txt.textContent = `API Error · Cached data · ${errMsg || ''}`;
+  } else if (s === 'fallback') {
+    dot.className = 'status-dot';
+    txt.textContent = 'Add API key → eia.gov/opendata (free)';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════════════
+function getD(year, month) {
+  return DATA.find(d => d.year === year && d.month === month) || null;
+}
+function getIdx(year, month) {
+  const i = DATA.findIndex(d => d.year === year && d.month === month);
+  return i >= 0 ? i : 0;
+}
+function pct(a, b) { return ((b - a) / a * 100).toFixed(1); }
+function fmt(v)    { return '$' + parseFloat(v).toFixed(2); }
+function fmtM(y,m) { return `${MN[m-1]} ${y}`; }
+
+// ═══════════════════════════════════════════════════════════════════
+//  PRESIDENTIAL BAND PLUGIN
+// ═══════════════════════════════════════════════════════════════════
+const presPlugin = {
+  id:'presBands',
+  beforeDraw(c) {
+    const {ctx, chartArea:ca, scales} = c;
+    if (!ca) return;
+    const xs = scales.x;
+    PRESIDENTS.forEach(p => {
+      const i1 = getIdx(p.sy, p.sm);
+      const i2 = p.isCurrent ? DATA.length-1 : getIdx(p.ey, p.em);
+      const x1 = xs.getPixelForValue(i1);
+      const x2 = xs.getPixelForValue(i2);
+      if (!x1 || !x2) return;
+      ctx.save();
+      ctx.fillStyle = p.party==='D' ? 'rgba(59,130,246,0.07)' : 'rgba(239,68,68,0.055)';
+      ctx.fillRect(x1, ca.top, x2-x1, ca.bottom-ca.top);
+      ctx.strokeStyle = p.party==='D' ? 'rgba(59,130,246,0.30)' : 'rgba(239,68,68,0.25)';
+      ctx.lineWidth=1; ctx.setLineDash([3,4]);
+      ctx.beginPath(); ctx.moveTo(x1,ca.top); ctx.lineTo(x1,ca.bottom); ctx.stroke();
+      ctx.setLineDash([]);
+      const bw = x2-x1;
+      if (bw > 26) {
+        ctx.fillStyle = p.party==='D' ? 'rgba(59,130,246,0.70)' : 'rgba(239,68,68,0.60)';
+        const fs = Math.min(10, bw/7);
+        ctx.font = `600 ${fs}px "Barlow Condensed",sans-serif`;
+        ctx.textAlign='center'; ctx.textBaseline='top';
+        const lbl = bw>50 ? p.short : (bw>30 ? p.short.split(' ')[0] : '');
+        if (lbl) ctx.fillText(lbl, (x1+x2)/2, ca.top+5);
+      }
+      ctx.restore();
+    });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════
+//  CHART
+// ═══════════════════════════════════════════════════════════════════
+function buildChart() {
+  const prices = DATA.map(d => d[mode]);
+  const canvas = document.getElementById('gasChart');
+  const ctx = canvas.getContext('2d');
+  const grad = ctx.createLinearGradient(0,0,0,450);
+  grad.addColorStop(0,'rgba(245,166,35,0.22)');
+  grad.addColorStop(0.65,'rgba(232,98,26,0.04)');
+  grad.addColorStop(1,'rgba(245,166,35,0)');
+  if (chart) { chart.destroy(); chart=null; }
+  chart = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels: DATA.map((_,i)=>i),
+      datasets:[{
+        data: prices,
+        borderColor:'#f5a623', borderWidth:2,
+        pointRadius:0, pointHoverRadius:6,
+        pointHoverBackgroundColor:'#f5a623',
+        pointHoverBorderColor:'#0a0c10', pointHoverBorderWidth:2,
+        backgroundColor:grad, fill:true, tension:0.3,
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#181c24', borderColor:'#2d3445', borderWidth:1,
+          titleColor:'#f5a623', bodyColor:'#b0b8cc', padding:13,
+          titleFont:{family:"'Barlow Condensed',sans-serif",size:14,weight:'700'},
+          bodyFont:{family:"'DM Mono',monospace",size:11},
+          callbacks:{
+            title([item]){
+              const d=DATA[item.parsed.x];
+              return d.label + (d.isLive ? '  ★ LATEST' : '');
+            },
+            label(item){
+              const d=DATA[item.parsed.x];
+              const pres=PRESIDENTS.find(p=>
+                (d.year>p.sy||(d.year===p.sy&&d.month>=p.sm))&&
+                (p.isCurrent||(d.year<p.ey||(d.year===p.ey&&d.month<=p.em)))
+              );
+              const lines=[];
+              if(mode==='nominal'){
+                lines.push(`  Nominal:      ${fmt(d.nominal)}/gal`);
+                lines.push(`  Adj.(2026$):  ${fmt(d.adjusted)}/gal`);
+              } else {
+                lines.push(`  Adj.(2026$):  ${fmt(d.adjusted)}/gal`);
+                lines.push(`  Nominal:      ${fmt(d.nominal)}/gal`);
+              }
+              if(pres) lines.push(`  President:    ${pres.name} (${pres.party})`);
+              if(d.isAnnualAvg) lines.push(`  ※ Annual avg · EIA monthly N/A`);
+              if(d.isLive) lines.push(`  ★ Latest EIA data point`);
+              return lines;
+            }
+          }
+        }
+      },
+      scales:{
+        x:{
+          type:'linear',
+          grid:{color:'rgba(255,255,255,0.03)'},
+          ticks:{
+            color:'#6b7385',
+            font:{family:"'DM Mono',monospace",size:10},
+            maxRotation:0, autoSkip:false,
+            callback(val){
+              const i=Math.round(val);
+              if(i<0||i>=DATA.length) return '';
+              const d=DATA[i];
+              return (d&&d.month===1&&d.year%5===0) ? d.year : '';
+            },
+            maxTicksLimit:300,
+          },
+          border:{color:'#232834'},
+          min:0, max:DATA.length-1,
+        },
+        y:{
+          grid:{color:'rgba(255,255,255,0.04)'},
+          ticks:{
+            color:'#6b7385',
+            font:{family:"'DM Mono',monospace",size:10},
+            callback:v=>`$${v.toFixed(2)}`
+          },
+          border:{color:'#232834'},
+          title:{
+            display:true,
+            text:mode==='nominal'?'$/gallon (Nominal)':`$/gallon (${CPI_BASE_LABEL}$)`,
+            color:'#4a5568',
+            font:{family:"'DM Mono',monospace",size:10}
+          }
+        }
+      }
+    },
+    plugins:[presPlugin]
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  HERO PANEL
+// ═══════════════════════════════════════════════════════════════════
+function buildHero() {
+  if (!DATA.length) return;
+  const latest = DATA[DATA.length-1];
+  const prev   = DATA[DATA.length-2];
+  const yago   = [...DATA].reverse().find(d =>
+    d.year === latest.year-1 && d.month === latest.month
+  );
+  const dp = latest[mode], pp = prev?.[mode], yp = yago?.[mode];
+  const mom = pp  ? parseFloat(pct(pp, dp))  : null;
+  const yoy = yp  ? parseFloat(pct(yp, dp))  : null;
+  const momD = pp ? (dp-pp).toFixed(2) : null;
+
+  // Find current president entry price
+  const currentPres = PRESIDENTS.find(p=>p.isCurrent);
+  const presEntry = currentPres ? getD(currentPres.sy, currentPres.sm) : null;
+  const presDelta = presEntry ? parseFloat(pct(presEntry[mode], dp)) : null;
+
+  document.getElementById('priceHero').innerHTML=`
+    <div>
+      <div class="hero-label">${mode==='nominal'?'CURRENT NATIONAL AVERAGE':`CURRENT (INFLATION-ADJ. ${CPI_BASE_LABEL.toUpperCase()}$)`}</div>
+      <div><span class="hero-price">${fmt(dp)}</span><span class="hero-unit">/gal</span></div>
+      <div class="hero-meta">
+        <strong>EIA</strong> · ${latest.label}
+        ${latest.isLive&&apiStatus==='live'?'· <span style="color:var(--green)">★ Live API</span>':'· Cached'}
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-label">vs. Last Month</div>
+        <div class="hero-stat-val" style="color:${mom>=0?'var(--red)':'var(--green)'}">
+          ${mom!=null?(mom>=0?'+':'')+mom+'%':'—'}
+        </div>
+        <div class="hero-stat-sub">${prev?prev.label+': '+fmt(pp):'—'}</div>
+      </div>
+      <div>
+        <div class="hero-stat-label">Month Δ $</div>
+        <div class="hero-stat-val" style="color:${momD&&parseFloat(momD)>=0?'var(--red)':'var(--green)'}">
+          ${momD!=null?(parseFloat(momD)>=0?'+':'')+fmt(Math.abs(parseFloat(momD))):'—'}
+        </div>
+        <div class="hero-stat-sub">vs. ${prev?.label||'—'}</div>
+      </div>
+      <div>
+        <div class="hero-stat-label">vs. Year Ago</div>
+        <div class="hero-stat-val" style="color:${yoy&&yoy>=0?'var(--red)':'var(--green)'}">
+          ${yoy!=null?(yoy>=0?'+':'')+yoy+'%':'—'}
+        </div>
+        <div class="hero-stat-sub">${yago?yago.label+': '+fmt(yp):'—'}</div>
+      </div>
+      ${currentPres&&presDelta!=null?`
+      <div>
+        <div class="hero-stat-label">${currentPres.short} Change</div>
+        <div class="hero-stat-val" style="color:${presDelta>=0?'var(--red)':'var(--green)'}">
+          ${presDelta>=0?'+':''}${presDelta}%
+        </div>
+        <div class="hero-stat-sub">${fmtM(currentPres.sy,currentPres.sm)}: ${presEntry?fmt(presEntry[mode]):'—'}</div>
+      </div>`:''}
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  STATS STRIP
+// ═══════════════════════════════════════════════════════════════════
+function buildStats() {
+  if (!DATA.length) return;
+  const vals = DATA.map(d=>({val:d[mode],label:d.label}));
+  const maxP = vals.reduce((a,b)=>a.val>b.val?a:b);
+  const minP = vals.reduce((a,b)=>a.val<b.val?a:b);
+  const adjMax = DATA.map(d=>({val:d.adjusted,label:d.label})).reduce((a,b)=>a.val>b.val?a:b);
+  let bigInc=null, bigDec=null;
+  PRESIDENTS.forEach(p=>{
+    const ed = p.isCurrent ? DATA[DATA.length-1] : getD(p.ey,p.em);
+    const sd = getD(p.sy,p.sm);
+    if(!sd||!ed) return;
+    const c = parseFloat(pct(sd.nominal, ed.nominal));
+    if(!bigInc||c>bigInc.change) bigInc={name:p.short,change:c};
+    if(!bigDec||c<bigDec.change) bigDec={name:p.short,change:c};
+  });
+  document.getElementById('statsStrip').innerHTML=`
+    <div class="stat-card">
+      <div class="stat-label">All-Time High (${mode==='nominal'?'Nominal':CPI_BASE_LABEL+'$'})</div>
+      <div class="stat-value">${fmt(maxP.val)}</div>
+      <div class="stat-sub">${maxP.label}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">All-Time Low (${mode==='nominal'?'Nominal':CPI_BASE_LABEL+'$'})</div>
+      <div class="stat-value">${fmt(minP.val)}</div>
+      <div class="stat-sub">${minP.label}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Real Peak (2026$)</div>
+      <div class="stat-value">${fmt(adjMax.val)}</div>
+      <div class="stat-sub">${adjMax.label} · BLS CPI-U</div>
+    </div>
+    <div class="stat-card rep-card">
+      <div class="stat-label">Largest Term Increase</div>
+      <div class="stat-value" style="font-size:19px">${bigInc?.name||'—'}</div>
+      ${bigInc?`<div><span class="stat-delta delta-pos">+${bigInc.change}%</span></div>`:''}
+      <div class="stat-sub">Nominal, term entry → exit</div>
+    </div>
+    <div class="stat-card dem-card">
+      <div class="stat-label">Largest Term Decrease</div>
+      <div class="stat-value" style="font-size:19px">${bigDec?.name||'—'}</div>
+      ${bigDec?`<div><span class="stat-delta delta-neg">${bigDec.change}%</span></div>`:''}
+      <div class="stat-sub">Nominal, term entry → exit</div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  PRESIDENTIAL CARDS
+// ═══════════════════════════════════════════════════════════════════
+function buildPresCards() {
+  if (!DATA.length) return;
+  document.getElementById('presGrid').innerHTML = PRESIDENTS.map(p=>{
+    const sd = getD(p.sy, p.sm);
+    const ed = p.isCurrent ? DATA[DATA.length-1] : getD(p.ey, p.em);
+    if (!sd||!ed) return '';
+    const sv=sd[mode], ev=ed[mode];
+    const delta=parseFloat(pct(sv,ev));
+    const isPos=delta>=0;
+    const termStr = p.isCurrent
+      ? `${fmtM(p.sy,p.sm)} – Present (${ed.label})`
+      : `${fmtM(p.sy,p.sm)} – ${fmtM(p.ey,p.em)}`;
+    return `
+      <div class="pres-card ${p.isCurrent?'current-pres':''}">
+        <div class="pres-party-bar party-${p.party}"></div>
+        <div class="pres-info">
+          <div class="pres-name">${p.name}</div>
+          <div class="pres-term">${p.party==='R'?'Republican':'Democrat'} · ${termStr}</div>
+          <div class="pres-prices">
+            <div>
+              <div class="pres-price-label">Entry${p.sy<=1990?' *':''}</div>
+              <div class="pres-price-val">${fmt(sv)}</div>
+            </div>
+            <div>
+              <div class="pres-price-label">${p.isCurrent?'Latest ★':'Exit'}</div>
+              <div class="pres-price-val">${fmt(ev)}</div>
+            </div>
+          </div>
+        </div>
+        <div class="pres-delta-badge ${isPos?'badge-pos':'badge-neg'}">
+          ${isPos?'+':''}${delta}%
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  MODE TOGGLE
+// ═══════════════════════════════════════════════════════════════════
+function setMode(m) {
+  mode=m;
+  document.getElementById('btnNominal').classList.toggle('active',m==='nominal');
+  document.getElementById('btnAdjusted').classList.toggle('active',m==='adjusted');
+  document.getElementById('modeBadge').textContent=m==='nominal'?'Nominal Prices':'Inflation-Adj. (2026$)';
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  RENDER ALL PANELS
+// ═══════════════════════════════════════════════════════════════════
+function render() {
+  buildWeeklyBanner();
+  buildHero();
+  buildStats();
+  buildChart();
+  buildPresCards();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  MANUAL REFRESH BUTTON
+// ═══════════════════════════════════════════════════════════════════
+function manualRefresh() {
+  fetchWeekly();
+  fetchEIA();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  INIT + AUTO-REFRESH TIMER
+// ═══════════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  // Initial load with baseline so UI shows immediately, then fetch
+  DATA = buildDataArray(BASELINE);
+  render();
+  // 1. Fetch live CPI first so all adjusted values use latest BLS base
+  //    Then immediately fetch gas price data in parallel
+  fetchCPIData().then(() => {
+    // Rebuild DATA with updated CPI base before rendering
+    DATA = buildDataArray(BASELINE);
+    render();
+  });
+  fetchWeekly();
+  fetchEIA();
+  // Auto-refresh: CPI every 6 hours, gas prices every 60 min
+  setInterval(fetchCPIData, 6 * 60 * 60 * 1000);
+  setInterval(() => { fetchWeekly(); fetchEIA(); }, REFRESH_INTERVAL_MS);
+});
+</script>
+</body>
+</html>
