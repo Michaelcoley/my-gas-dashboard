@@ -281,6 +281,204 @@ footer{border-top:1px solid var(--border);padding-top:18px;display:flex;flex-wra
     .live-ticker{margin-left:-12px;margin-right:-12px;width:calc(100% + 24px);}
   }
 
+
+  /* ─── TIME RANGE CONTROL ─── */
+  .range-control{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:12px;}
+  .range-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
+  .range-presets{display:flex;gap:4px;flex-wrap:wrap;}
+  .range-preset{font-family:var(--font-m);font-size:11px;letter-spacing:.06em;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .18s;}
+  .range-preset:hover{border-color:var(--accent);color:var(--accent);}
+  .range-preset.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600;}
+  .range-readout{font-family:var(--font-m);font-size:11px;color:var(--accent);letter-spacing:.06em;white-space:nowrap;}
+  .range-readout strong{color:var(--text);}
+  /* dual-handle slider track */
+  .slider-track-wrap{position:relative;height:32px;display:flex;align-items:center;padding:0 8px;}
+  .slider-track{position:absolute;left:8px;right:8px;height:4px;border-radius:2px;background:var(--border);}
+  .slider-fill{position:absolute;height:4px;border-radius:2px;background:var(--accent);pointer-events:none;}
+  .range-input{position:absolute;left:8px;right:8px;width:calc(100% - 16px);-webkit-appearance:none;appearance:none;height:4px;background:transparent;pointer-events:none;outline:none;}
+  .range-input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);cursor:pointer;pointer-events:all;box-shadow:0 0 0 3px rgba(245,166,35,.2);transition:box-shadow .15s;}
+  .range-input::-webkit-slider-thumb:hover{box-shadow:0 0 0 5px rgba(245,166,35,.3);}
+  .range-input::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);cursor:pointer;pointer-events:all;}
+  .range-ticks{display:flex;justify-content:space-between;padding:0 8px;margin-top:2px;}
+  .range-tick{font-family:var(--font-m);font-size:9px;color:var(--muted);letter-spacing:.04em;cursor:pointer;transition:color .15s;}
+  .range-tick:hover{color:var(--accent);}
+  .range-tick.active{color:var(--accent);font-weight:600;}
+
+
+  /* ─── LIGHT MODE ─── */
+  /*
+   * High-contrast light palette — all text targets WCAG AA (4.5:1+)
+   * --accent in light mode is darkened amber for text legibility
+   * --green / --red darkened to pass on white backgrounds
+   */
+  body.light {
+    /* Layout */
+    --bg:      #f2f0ea;
+    --surface: #ffffff;
+    --surface2:#e8e5dc;
+    --border:  #b8b4a8;
+    /* Typography */
+    --text:    #141412;
+    --muted:   #3d3b35;
+    /* Accent — darkened from #f5a623 to pass 4.5:1 on white */
+    --accent:  #9a6200;
+    --accent2: #b84800;
+    /* Semantic */
+    --green:   #156130;
+    --red:     #b91c1c;
+    --diesel:  #5b21b6;
+    /* Party bands */
+    --dem:     rgba(37,99,235,0.12);
+    --dem-line:#1d4ed8;
+    --rep:     rgba(185,28,28,0.10);
+    --rep-line:#b91c1c;
+  }
+
+  /* ── Layout & surfaces ── */
+  body.light { background:var(--bg); }
+  body.light .live-ticker {
+    background:rgba(242,240,234,0.97);
+    border-bottom-color:#c8b880;
+    backdrop-filter:blur(12px);
+  }
+  body.light .today-board {
+    border-color:rgba(154,98,0,.4);
+    background:#fff;
+  }
+  body.light .today-board::before {
+    background:linear-gradient(135deg,rgba(154,98,0,.05) 0%,transparent 60%);
+  }
+  body.light .chart-outer,
+  body.light .stat-card,
+  body.light .pres-card,
+  body.light .fuel-card,
+  body.light .trend-card,
+  body.light .range-control,
+  body.light .state-card,
+  body.light .tax-card,
+  body.light .nav-tabs {
+    box-shadow:0 1px 4px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.04);
+  }
+
+  /* ── Text & labels ── */
+  body.light .eyebrow         { color:var(--accent); }
+  body.light .subtitle        { color:#5a5750; }
+  body.light .stat-label,
+  body.light .fuel-card-label,
+  body.light .pres-term,
+  body.light .tb-dlabel,
+  body.light .tb-grade,
+  body.light .tb-attrib,
+  body.light .tb-updated,
+  body.light .tb-date,
+  body.light .range-readout,
+  body.light .ticker-stat .ticker-stat-label,
+  body.light .ticker-source,
+  body.light .ticker-countdown,
+  body.light .legend-item,
+  body.light .footer-sources,
+  body.light .footer-note,
+  body.light .padd-note,
+  body.light .tax-breakdown    { color:#5a5750; }
+
+  /* ── Nav tabs ── */
+  body.light .nav-tab          { color:#5a5750; }
+  body.light .nav-tab.active   { background:var(--accent); color:#fff; }
+  body.light .nav-tab:hover:not(.active) { color:var(--accent); }
+
+  /* ── Buttons ── */
+  body.light .pill-btn         { color:#5a5750; }
+  body.light .pill-btn.active  { background:var(--accent); color:#fff; }
+  body.light .refresh-btn      { color:#5a5750; border-color:#b8b4a8; }
+  body.light .refresh-btn:hover{ color:var(--accent); border-color:var(--accent); }
+  body.light .theme-toggle     { color:#5a5750; border-color:#b8b4a8; }
+  body.light .theme-toggle:hover{ color:var(--accent); border-color:var(--accent); }
+  body.light .sort-btn         { color:#5a5750; border-color:#b8b4a8; }
+  body.light .sort-btn.active  { background:var(--accent); color:#fff; border-color:var(--accent); }
+  body.light .range-preset     { color:#5a5750; border-color:#b8b4a8; }
+  body.light .range-preset.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  body.light .range-preset:hover  { color:var(--accent); border-color:var(--accent); }
+  body.light .range-tick       { color:#5a5750; }
+  body.light .range-tick.active{ color:var(--accent); }
+
+  /* ── Status pills ── */
+  body.light .status-pill.live {
+    color:#156130; background:rgba(21,97,48,.1); border-color:rgba(21,97,48,.35);
+  }
+  body.light .status-pill.loading {
+    color:#9a6200; background:rgba(154,98,0,.1); border-color:rgba(154,98,0,.3);
+  }
+  body.light .status-pill.error {
+    color:#b91c1c; background:rgba(185,28,28,.08); border-color:rgba(185,28,28,.3);
+  }
+
+  /* ── Big price displays ── */
+  body.light .tb-big-price             { color:#9a6200; }
+  body.light .ticker-price-big,
+  body.light .st-price                 { color:#9a6200; }
+  body.light .fuel-card.regular-card .fuel-card-price { color:#9a6200; }
+  body.light .fuel-card.diesel-card .fuel-card-price  { color:#5b21b6; }
+
+  /* ── Ticker bar ── */
+  body.light .st-source.live-aaa {
+    color:#156130; background:rgba(21,97,48,.1); border-color:rgba(21,97,48,.3);
+  }
+  body.light .st-source.live-eia {
+    color:#9a6200; background:rgba(154,98,0,.1); border-color:rgba(154,98,0,.3);
+  }
+  body.light .tb-live-dot      { background:#156130; }
+  body.light .tb-live-dot.amber{ background:#9a6200; }
+  body.light .tb-source-label  { color:#156130; }
+  body.light .tb-source-label.amber { color:#9a6200; }
+
+  /* ── Chart badges ── */
+  body.light .chart-badge {
+    color:#9a6200; background:rgba(154,98,0,.1); border-color:rgba(154,98,0,.3);
+  }
+  body.light .chart-badge.diesel-badge {
+    color:#5b21b6; background:rgba(91,33,182,.08); border-color:rgba(91,33,182,.25);
+  }
+
+  /* ── Trend card ── */
+  body.light .factor-neutral { color:#5a5750; background:#f2f0ea; border-color:#b8b4a8; }
+
+  /* ── Presidential cards ── */
+  body.light .pres-name  { color:#141412; }
+  body.light .badge-pos  { background:rgba(185,28,28,.08); border-color:rgba(185,28,28,.2); }
+  body.light .badge-neg  { background:rgba(21,97,48,.08);  border-color:rgba(21,97,48,.2);  }
+  body.light .delta-pos  { background:rgba(185,28,28,.08); color:#b91c1c; }
+  body.light .delta-neg  { background:rgba(21,97,48,.08);  color:#156130; }
+
+  /* ── Stat cards ── */
+  body.light .stat-value { color:#141412; }
+  body.light .stat-card::after { background:var(--accent); }
+  body.light .stat-card.dem-card::after { background:var(--dem-line); }
+  body.light .stat-card.rep-card::after { background:var(--rep-line); }
+
+  /* ── Slider ── */
+  body.light .slider-track    { background:#c8c5bb; }
+  body.light .slider-fill     { background:var(--accent); }
+  body.light .range-input::-webkit-slider-thumb {
+    background:var(--accent); border-color:#f2f0ea;
+    box-shadow:0 0 0 3px rgba(154,98,0,.2);
+  }
+
+  /* ── Footer links ── */
+  body.light .footer-sources a { color:var(--accent); border-bottom-color:rgba(154,98,0,.3); }
+
+  /* ── State card bars ── */
+  body.light .state-bar { background:#c8c5bb; }
+
+  /* ── Tax bars ── */
+  body.light .tax-fed   { background:#9a6200; }
+  body.light .tax-state-bar { background:#1d4ed8; }
+  body.light .tax-other { background:#5a5750; }
+
+  /* Theme toggle button */
+  .theme-toggle{display:flex;align-items:center;gap:6px;font-family:var(--font-m);font-size:11px;letter-spacing:.08em;padding:6px 14px;border-radius:100px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;transition:all .2s;user-select:none;}
+  .theme-toggle:hover{border-color:var(--accent);color:var(--accent);}
+  .theme-toggle-icon{font-size:13px;line-height:1;}
+
 </style>
 </head>
 <body>
@@ -342,6 +540,10 @@ footer{border-top:1px solid var(--border);padding-top:18px;display:flex;flex-wra
   </div>
   <div class="header-right">
     <div class="status-bar">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+        <span class="theme-toggle-icon" id="themeIcon">☀️</span>
+        <span id="themeLabel">Light</span>
+      </button>
       <div id="statusPill" class="status-pill loading">
         <span class="status-dot pulse"></span>
         <span id="statusText">Loading…</span>
@@ -419,13 +621,42 @@ footer{border-top:1px solid var(--border);padding-top:18px;display:flex;flex-wra
   <!-- STATS STRIP -->
   <div class="stats-strip" id="statsStrip"></div>
 
-  <!-- MINI CHART -->
+  <!-- TIME RANGE CONTROL -->
+  <div class="range-control" id="rangeControl">
+    <div class="range-top">
+      <div class="range-presets">
+        <button class="range-preset" onclick="setPreset('1M')">1M</button>
+        <button class="range-preset" onclick="setPreset('3M')">3M</button>
+        <button class="range-preset" onclick="setPreset('6M')">6M</button>
+        <button class="range-preset" onclick="setPreset('1Y')">1Y</button>
+        <button class="range-preset" onclick="setPreset('3Y')">3Y</button>
+        <button class="range-preset" onclick="setPreset('5Y')">5Y</button>
+        <button class="range-preset" onclick="setPreset('10Y')">10Y</button>
+        <button class="range-preset" onclick="setPreset('20Y')">20Y</button>
+        <button class="range-preset active" onclick="setPreset('ALL')">ALL</button>
+      </div>
+      <div class="range-readout" id="rangeReadout">
+        <strong id="rangeStart">Jan 1985</strong> → <strong id="rangeEnd">Mar 2026</strong>
+        &nbsp;·&nbsp; <span id="rangeMonths">496 months</span>
+      </div>
+    </div>
+    <!-- Dual-handle slider -->
+    <div class="slider-track-wrap">
+      <div class="slider-track"></div>
+      <div class="slider-fill" id="sliderFill"></div>
+      <input type="range" class="range-input" id="sliderMin" min="0" max="100" value="0" step="1">
+      <input type="range" class="range-input" id="sliderMax" min="0" max="100" value="100" step="1">
+    </div>
+    <div class="range-ticks" id="rangeTicks"></div>
+  </div>
+
+  <!-- MAIN CHART -->
   <div class="chart-outer">
     <div class="chart-header">
       <div class="chart-title">Price History — Regular &amp; Diesel (Monthly)</div>
       <div class="chart-badge" id="modeBadge">Nominal Prices</div>
     </div>
-    <div class="chart-wrap">
+    <div class="chart-wrap" style="height:clamp(280px,42vw,480px);">
       <canvas id="mainChart"></canvas>
       <div class="chart-loading" id="chartLoading"><div class="spin"></div>LOADING…</div>
     </div>
@@ -863,8 +1094,8 @@ const BASE_CHART_OPTS = (dataArr, yLabel) => ({
   scales:{
     x:{
       type:'linear',
-      grid:{color:'rgba(255,255,255,0.03)'},
-      ticks:{color:'#6b7385',font:{family:"'DM Mono',monospace",size:10},maxRotation:0,autoSkip:false,
+      grid:{color:gridCol},
+      ticks:{color:tickCol,font:{family:"'DM Mono',monospace",size:10},maxRotation:0,autoSkip:false,
         callback(val){
           const i=Math.round(val);
           if(i<0||i>=dataArr.length) return '';
@@ -874,9 +1105,9 @@ const BASE_CHART_OPTS = (dataArr, yLabel) => ({
       border:{color:'#232834'},min:0,max:dataArr.length-1,
     },
     y:{
-      grid:{color:'rgba(255,255,255,0.04)'},
-      ticks:{color:'#6b7385',font:{family:"'DM Mono',monospace",size:10},callback:v=>`$${v.toFixed(2)}`},
-      border:{color:'#232834'},
+      grid:{color:gridCol},
+      ticks:{color:tickCol,font:{family:"'DM Mono',monospace",size:10},callback:v=>`$${v.toFixed(2)}`},
+      border:{color:borderCol},
       title:{display:true,text:yLabel||'$/gallon',color:'#4a5568',font:{family:"'DM Mono',monospace",size:10}}
     }
   }
@@ -889,8 +1120,13 @@ function buildMainChart() {
   const canvas = document.getElementById('mainChart');
   const ctx = canvas.getContext('2d');
   const regPrices = DATA_REG.map(d=>d[mode]);
+  const isDark = !document.body.classList.contains('light');
+  const gridCol   = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.09)';
+  const tickCol   = isDark ? '#6b7385' : '#5a5750';
+  const borderCol = isDark ? '#232834' : '#b8b4a8';
+  const accentLine = isDark ? '#f5a623' : '#9a6200';
   const grad = ctx.createLinearGradient(0,0,0,440);
-  grad.addColorStop(0,'rgba(245,166,35,0.2)');
+  grad.addColorStop(0, isDark ? 'rgba(245,166,35,0.22)' : 'rgba(154,98,0,0.14)');
   grad.addColorStop(1,'rgba(245,166,35,0)');
 
   if(charts.main){charts.main.destroy();}
@@ -919,7 +1155,7 @@ function buildMainChart() {
     data:{
       labels:DATA_REG.map((_,i)=>i),
       datasets:[
-        {data:regPrices,borderColor:'#f5a623',borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#f5a623',backgroundColor:grad,fill:true,tension:0.3,label:'Regular'},
+        {data:regPrices,borderColor:accentLine,borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#f5a623',backgroundColor:grad,fill:true,tension:0.3,label:'Regular'},
         {data:dslPrices,borderColor:'#a78bfa',borderWidth:1.5,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#a78bfa',backgroundColor:'transparent',fill:false,tension:0.3,label:'Diesel',spanGaps:true},
       ]
     },
@@ -927,6 +1163,17 @@ function buildMainChart() {
     plugins:[makePresPlugin(DATA_REG),makeRecPlugin(DATA_REG)]
   });
   document.getElementById('chartLoading').classList.add('hidden');
+  // Init slider once chart is built (first time only)
+  if (rangeMax === 0) {
+    rangeMin = 0;
+    rangeMax = DATA_REG.length - 1;
+    initSlider();
+    setPreset('ALL');
+  } else {
+    // Re-apply current range after rebuild
+    applyRange();
+    updateSliderUI();
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1467,6 +1714,8 @@ function setMode(m) {
 function render() {
   updateTicker();
   buildWeeklyBanner();
+  // Sync slider max to new data length
+  if (DATA_REG.length && rangeMax === DATA_REG.length - 2) { rangeMax = DATA_REG.length - 1; const sm = document.getElementById('sliderMax'); if(sm){sm.max=rangeMax; if(activePreset==='ALL') sm.value=rangeMax;} }
   buildFuelPair();
   buildTrend();
   buildStats();
@@ -1597,6 +1846,7 @@ function initTickerScroll() {
 //  INIT
 // ═══════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
+  loadThemePreference();
   DATA_REG=buildData(BASELINE_REG);
   DATA_DSL=buildData(BASELINE_DSL);
   render();
@@ -1707,6 +1957,202 @@ function startCountdown() {
     if (el) el.textContent = `${m}:${s.toString().padStart(2,'0')}`;
     if (countdownSecs === 0) countdownSecs = REFRESH_MS / 1000;
   }, 1000);
+}
+
+
+// ═══════════════════════════════════════════════════════
+//  TIME RANGE SLIDER
+// ═══════════════════════════════════════════════════════
+let rangeMin = 0;      // index into DATA_REG
+let rangeMax = 0;      // updated once data loads
+let activePreset = 'ALL';
+
+function initSlider() {
+  if (!DATA_REG.length) return;
+  rangeMax = DATA_REG.length - 1;
+
+  const sMin = document.getElementById('sliderMin');
+  const sMax = document.getElementById('sliderMax');
+  if (!sMin || !sMax) return;
+
+  sMin.max = sMax.max = rangeMax;
+  sMin.value = rangeMin;
+  sMax.value = rangeMax;
+
+  sMin.addEventListener('input', onSliderChange);
+  sMax.addEventListener('input', onSliderChange);
+
+  buildRangeTicks();
+  updateSliderUI();
+}
+
+function onSliderChange() {
+  const sMin = document.getElementById('sliderMin');
+  const sMax = document.getElementById('sliderMax');
+  let lo = parseInt(sMin.value), hi = parseInt(sMax.value);
+  // Prevent handles crossing (keep 12-month minimum gap)
+  if (lo >= hi - 12) {
+    if (this === sMin) lo = hi - 12;
+    else hi = lo + 12;
+    sMin.value = Math.max(0, lo);
+    sMax.value = Math.min(DATA_REG.length - 1, hi);
+  }
+  rangeMin = parseInt(sMin.value);
+  rangeMax = parseInt(sMax.value);
+  activePreset = '';
+  document.querySelectorAll('.range-preset').forEach(b => b.classList.remove('active'));
+  updateSliderUI();
+  applyRange();
+}
+
+function setPreset(p) {
+  if (!DATA_REG.length) return;
+  activePreset = p;
+  const total = DATA_REG.length - 1;
+  const now = total;
+  let start = 0;
+  const monthsMap = {'1M':1,'3M':3,'6M':6,'1Y':12,'3Y':36,'5Y':60,'10Y':120,'20Y':240,'ALL':total+1};
+  const months = monthsMap[p] || total + 1;
+  start = Math.max(0, now - months + 1);
+
+  rangeMin = start;
+  rangeMax = now;
+
+  const sMin = document.getElementById('sliderMin');
+  const sMax = document.getElementById('sliderMax');
+  if (sMin) sMin.value = rangeMin;
+  if (sMax) sMax.value = rangeMax;
+
+  document.querySelectorAll('.range-preset').forEach(b => {
+    b.classList.toggle('active', b.textContent === p);
+  });
+
+  updateSliderUI();
+  applyRange();
+}
+
+function updateSliderUI() {
+  if (!DATA_REG.length) return;
+  const total = DATA_REG.length - 1;
+  const lo = rangeMin / total * 100;
+  const hi = rangeMax / total * 100;
+
+  const fill = document.getElementById('sliderFill');
+  if (fill) {
+    fill.style.left = `calc(8px + ${lo}% * (100% - 16px) / 100)`;
+    fill.style.right = `calc(8px + ${(100-hi)}% * (100% - 16px) / 100)`;
+  }
+
+  const dStart = DATA_REG[rangeMin];
+  const dEnd   = DATA_REG[rangeMax];
+  const months = rangeMax - rangeMin + 1;
+
+  const rsEl = document.getElementById('rangeStart');
+  const reEl = document.getElementById('rangeEnd');
+  const rmEl = document.getElementById('rangeMonths');
+  if (rsEl && dStart) rsEl.textContent = dStart.label;
+  if (reEl && dEnd)   reEl.textContent = dEnd.label;
+  if (rmEl) rmEl.textContent = months + (months === 1 ? ' month' : ' months');
+
+  // Highlight active tick
+  const years = getTickYears();
+  document.querySelectorAll('.range-tick').forEach((el, i) => {
+    if (i < years.length) {
+      const yr = years[i];
+      const idx = DATA_REG.findIndex(d => d.year === yr && d.month === 1);
+      el.classList.toggle('active', idx >= rangeMin && idx <= rangeMax);
+    }
+  });
+}
+
+function getTickYears() {
+  if (!DATA_REG.length) return [];
+  const startY = DATA_REG[0].year, endY = DATA_REG[DATA_REG.length-1].year;
+  const range = endY - startY;
+  const step = range > 30 ? 5 : range > 15 ? 3 : range > 8 ? 2 : 1;
+  const ticks = [];
+  for (let y = Math.ceil(startY/step)*step; y <= endY; y += step) ticks.push(y);
+  return ticks;
+}
+
+function buildRangeTicks() {
+  const container = document.getElementById('rangeTicks');
+  if (!container || !DATA_REG.length) return;
+  const years = getTickYears();
+  container.innerHTML = years.map(yr => {
+    return `<span class="range-tick" onclick="jumpToYear(${yr})">${yr}</span>`;
+  }).join('');
+}
+
+function jumpToYear(yr) {
+  if (!DATA_REG.length) return;
+  const idx = DATA_REG.findIndex(d => d.year === yr && d.month === 1);
+  if (idx < 0) return;
+  // Expand range to show ± 2 years around clicked year
+  const half = 24;
+  rangeMin = Math.max(0, idx - half);
+  rangeMax = Math.min(DATA_REG.length - 1, idx + half);
+  const sMin = document.getElementById('sliderMin');
+  const sMax = document.getElementById('sliderMax');
+  if (sMin) sMin.value = rangeMin;
+  if (sMax) sMax.value = rangeMax;
+  activePreset = '';
+  document.querySelectorAll('.range-preset').forEach(b => b.classList.remove('active'));
+  updateSliderUI();
+  applyRange();
+}
+
+function applyRange() {
+  if (!charts.main || !DATA_REG.length) return;
+  charts.main.options.scales.x.min = rangeMin;
+  charts.main.options.scales.x.max = rangeMax;
+  // Auto-scale Y to visible data
+  const visible = DATA_REG.slice(rangeMin, rangeMax + 1);
+  const visibleDsl = DATA_DSL.filter(d => {
+    const idx = DATA_REG.findIndex(r => r.year === d.year && r.month === d.month);
+    return idx >= rangeMin && idx <= rangeMax;
+  });
+  const allPrices = [
+    ...visible.map(d => d[mode]),
+    ...visibleDsl.map(d => d[mode]).filter(Boolean),
+  ];
+  const yMin = Math.max(0, Math.min(...allPrices) * 0.92);
+  const yMax = Math.max(...allPrices) * 1.06;
+  charts.main.options.scales.y.min = parseFloat(yMin.toFixed(2));
+  charts.main.options.scales.y.max = parseFloat(yMax.toFixed(2));
+  charts.main.update('active');
+}
+
+
+// ═══════════════════════════════════════════════════════
+//  LIGHT / DARK MODE
+// ═══════════════════════════════════════════════════════
+let isLight = false;
+
+function toggleTheme() {
+  isLight = !isLight;
+  document.body.classList.toggle('light', isLight);
+  document.getElementById('themeIcon').textContent  = isLight ? '🌙' : '☀️';
+  document.getElementById('themeLabel').textContent = isLight ? 'Dark' : 'Light';
+  localStorage.setItem('gasDashTheme', isLight ? 'light' : 'dark');
+  // Rebuild charts with updated colors
+  Object.keys(charts).forEach(k => { if(charts[k]){ charts[k].destroy(); delete charts[k]; }});
+  buildMainChart();
+  // Rebuild any open tabs
+  const activeTab = document.querySelector('.tab-panel.active')?.id?.replace('tab-','');
+  if (activeTab === 'history')    buildHistoryCharts();
+  if (activeTab === 'presidents') buildPresChart();
+  if (activeTab === 'analysis')   buildAnalysisCharts();
+}
+
+function loadThemePreference() {
+  const saved = localStorage.getItem('gasDashTheme');
+  if (saved === 'light') {
+    isLight = true;
+    document.body.classList.add('light');
+    document.getElementById('themeIcon').textContent  = '🌙';
+    document.getElementById('themeLabel').textContent = 'Dark';
+  }
 }
 
 </script>
