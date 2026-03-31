@@ -68,23 +68,37 @@
   .hero-stat-val{font-family:var(--font-d);font-size:24px;font-weight:700;line-height:1.15;}
   .hero-stat-sub{font-family:var(--font-m);font-size:10px;color:var(--muted);}
 
-  /* ─── WEEKLY PRICE BANNER ─── */
-  .weekly-banner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;background:var(--surface2);border:1px solid rgba(245,166,35,.22);border-radius:14px;padding:16px 24px;margin-bottom:12px;position:relative;overflow:hidden;}
-  .weekly-banner::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(245,166,35,.06) 0%,transparent 60%);pointer-events:none;}
-  .weekly-banner.loading-state{opacity:.45;}
-  .wb-left{display:flex;flex-direction:column;gap:2px;}
-  .wb-eyebrow{font-family:var(--font-m);font-size:10px;letter-spacing:.16em;color:var(--accent);text-transform:uppercase;margin-bottom:2px;}
-  .wb-price-row{display:flex;align-items:baseline;gap:8px;}
-  .wb-price{font-family:var(--font-d);font-size:clamp(36px,6vw,64px);font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--accent);}
-  .wb-unit{font-family:var(--font-d);font-size:18px;font-weight:400;color:var(--muted);}
-  .wb-meta{font-family:var(--font-m);font-size:11px;color:var(--muted);margin-top:3px;}
-  .wb-right{display:flex;gap:20px;flex-wrap:wrap;align-items:center;}
-  .wb-stat{}
-  .wb-stat-label{font-family:var(--font-m);font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;}
-  .wb-stat-val{font-family:var(--font-d);font-size:22px;font-weight:700;line-height:1.15;}
-  .wb-stat-sub{font-family:var(--font-m);font-size:10px;color:var(--muted);}
-  .wb-divider{width:1px;background:var(--border);align-self:stretch;flex-shrink:0;min-height:40px;}
-  .wb-source-tag{font-family:var(--font-m);font-size:10px;letter-spacing:.08em;padding:3px 9px;border-radius:4px;background:rgba(245,166,35,.1);color:var(--accent);border:1px solid rgba(245,166,35,.2);white-space:nowrap;}
+  /* ─── TODAY'S PRICE BOARD ─── */
+  .today-board{background:var(--surface);border:1px solid rgba(245,166,35,.3);border-radius:16px;margin-bottom:14px;position:relative;overflow:hidden;}
+  .today-board::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(245,166,35,.08) 0%,rgba(232,98,26,.04) 50%,transparent 100%);pointer-events:none;}
+  .today-board.loading-state{opacity:.4;}
+  .today-board-top{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;}
+  /* LEFT: the big price */
+  .tb-price-block{flex:0 0 auto;padding:22px 32px 20px 28px;border-right:1px solid rgba(245,166,35,.15);display:flex;flex-direction:column;justify-content:center;min-width:220px;}
+  .tb-source-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .tb-live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 1.5s ease infinite;flex-shrink:0;}
+  .tb-source-label{font-family:var(--font-m);font-size:11px;letter-spacing:.14em;color:var(--green);text-transform:uppercase;}
+  .tb-source-label.fallback{color:var(--accent);}
+  .tb-live-dot.fallback{background:var(--accent);}
+  .tb-date{font-family:var(--font-m);font-size:11px;color:var(--muted);margin-bottom:4px;}
+  .tb-big-price{font-family:var(--font-d);font-size:clamp(64px,10vw,108px);font-weight:800;letter-spacing:-.04em;line-height:.9;color:var(--accent);}
+  .tb-big-price.loading{color:var(--muted);}
+  .tb-gal{font-family:var(--font-d);font-size:22px;font-weight:400;color:var(--muted);margin-top:4px;letter-spacing:.02em;}
+  .tb-grade{font-family:var(--font-m);font-size:10px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-top:6px;}
+  /* RIGHT: delta grid */
+  .tb-deltas{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0;}
+  .tb-delta-cell{padding:18px 20px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;}
+  .tb-delta-cell:last-child{border-right:none;}
+  .tb-delta-cell:nth-last-child(-n+4){border-bottom:none;}
+  .tb-dlabel{font-family:var(--font-m);font-size:9px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-bottom:4px;}
+  .tb-dval{font-family:var(--font-d);font-size:28px;font-weight:800;line-height:1;letter-spacing:-.02em;}
+  .tb-dsub{font-family:var(--font-m);font-size:10px;color:var(--muted);margin-top:3px;}
+  /* BOTTOM bar */
+  .today-board-bottom{border-top:1px solid var(--border);padding:8px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+  .tb-attrib{font-family:var(--font-m);font-size:10px;color:var(--muted);letter-spacing:.05em;}
+  .tb-attrib a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(245,166,35,.25);}
+  .tb-attrib a:hover{border-bottom-color:var(--accent);}
+  .tb-updated{font-family:var(--font-m);font-size:10px;color:var(--muted);letter-spacing:.06em;}
 
   /* ─── STATS STRIP ─── */
   .stats-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(144px,1fr));gap:10px;margin-bottom:20px;}
@@ -181,12 +195,24 @@
   </div>
 </header>
 
-<!-- TODAY'S PRICE BANNER (AAA Daily via CF Worker /daily-price) -->
-<div class="weekly-banner loading-state" id="weeklyBanner">
-  <div class="wb-left">
-    <div class="wb-eyebrow">Today's National Average — AAA Daily</div>
-    <div class="wb-price-row"><span class="wb-price" style="color:var(--muted)">—</span><span class="wb-unit">/gal</span></div>
-    <div class="wb-meta">Fetching today's price…</div>
+<!-- TODAY'S PRICE BOARD (AAA Daily via CF Worker /daily-price) -->
+<div class="today-board loading-state" id="weeklyBanner">
+  <div class="today-board-top">
+    <div class="tb-price-block">
+      <div class="tb-source-row">
+        <div class="tb-live-dot"></div>
+        <div class="tb-source-label">AAA Daily</div>
+      </div>
+      <div class="tb-date">Fetching today's price…</div>
+      <div class="tb-big-price loading">—</div>
+      <div class="tb-gal">/gallon</div>
+      <div class="tb-grade">Regular Unleaded · U.S. National Avg</div>
+    </div>
+    <div class="tb-deltas" id="tbDeltas"></div>
+  </div>
+  <div class="today-board-bottom">
+    <div class="tb-attrib">Source: <a href="https://gasprices.aaa.com/" target="_blank">AAA Fuel Gauge Report</a> · 60,000+ stations surveyed daily</div>
+    <div class="tb-updated" id="tbUpdated">Loading…</div>
   </div>
 </div>
 
@@ -599,74 +625,97 @@ async function fetchEIAWeeklyFallback() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-//  DAILY/WEEKLY BANNER RENDER
+//  TODAY'S PRICE BOARD RENDER
 // ═══════════════════════════════════════════════════════════════════
 function buildWeeklyBanner() {
-  const el = document.getElementById('weeklyBanner');
+  const board   = document.getElementById('weeklyBanner');
+  const deltas  = document.getElementById('tbDeltas');
+  const updated = document.getElementById('tbUpdated');
+
   if (!WEEKLY) {
-    el.innerHTML = `
-      <div class="wb-left">
-        <div class="wb-eyebrow">Today's National Average</div>
-        <div class="wb-price-row"><span class="wb-price" style="color:var(--muted)">—</span><span class="wb-unit">/gal</span></div>
-        <div class="wb-meta" style="color:var(--red)">Price data unavailable · Check back shortly</div>
-      </div>`;
+    // No data at all — show placeholder
+    board.querySelector('.tb-big-price').textContent = '—';
+    board.querySelector('.tb-big-price').className   = 'tb-big-price loading';
+    board.querySelector('.tb-date').textContent      = 'Price unavailable · check back shortly';
+    board.querySelector('.tb-source-label').textContent = 'AAA Daily';
+    if (deltas)  deltas.innerHTML  = '';
+    if (updated) updated.textContent = '';
     return;
   }
 
-  const { price, sourceLabel, isDaily } = WEEKLY;
+  const { price, sourceLabel, isDaily, date } = WEEKLY;
+  const isAAA = isDaily && WEEKLY.source === 'AAA';
 
-  // WoW delta — prefer EIA weekly context if available
+  // ── Big price block ──
+  const bigPrice = board.querySelector('.tb-big-price');
+  bigPrice.textContent = fmt(price);
+  bigPrice.className   = 'tb-big-price';
+
+  const srcLabel = board.querySelector('.tb-source-label');
+  const liveDot  = board.querySelector('.tb-live-dot');
+  if (isAAA) {
+    srcLabel.textContent = 'AAA Daily — Live';
+    srcLabel.className   = 'tb-source-label';
+    liveDot.className    = 'tb-live-dot';
+  } else {
+    srcLabel.textContent = 'EIA Weekly (AAA unavailable)';
+    srcLabel.className   = 'tb-source-label fallback';
+    liveDot.className    = 'tb-live-dot fallback';
+  }
+
+  board.querySelector('.tb-date').textContent = isAAA
+    ? `Today · ${formatDisplayDate(date)}`
+    : `Week ending ${formatWeekDate(date)}`;
+
+  // ── Delta cells ──
   const refPrice  = WEEKLY.eiaWeekPrice  || price;
   const prevPrice = WEEKLY.eiaWeekPrev   || null;
   const prevLabel = WEEKLY.eiaWeekPrevP  ? formatWeekDate(WEEKLY.eiaWeekPrevP) : null;
   const price4    = WEEKLY.eiaWeek4      || null;
   const label4    = WEEKLY.eiaWeek4P     ? formatWeekDate(WEEKLY.eiaWeek4P)    : null;
 
-  const wowDelta  = prevPrice ? parseFloat(pct(prevPrice, refPrice)) : null;
-  const wowDollar = prevPrice ? (refPrice - prevPrice).toFixed(2)    : null;
-  const m4Delta   = price4    ? parseFloat(pct(price4,   refPrice))  : null;
+  const latestMonthly = DATA.length ? DATA[DATA.length - 1] : null;
+  const latestYearAgo = DATA.length
+    ? [...DATA].reverse().find(d => d.year === DATA[DATA.length-1].year - 1 && d.month === DATA[DATA.length-1].month)
+    : null;
 
-  // Month-over-month vs latest monthly EIA
-  const latestMonthly = DATA.length ? DATA[DATA.length-1] : null;
-  const momDelta = latestMonthly ? parseFloat(pct(latestMonthly.nominal, price)) : null;
+  const wowD  = prevPrice     ? parseFloat(pct(prevPrice,            refPrice)) : null;
+  const wowDollar = prevPrice ? (refPrice - prevPrice).toFixed(2) : null;
+  const m4D   = price4        ? parseFloat(pct(price4,               refPrice)) : null;
+  const momD  = latestMonthly ? parseFloat(pct(latestMonthly.nominal, price))   : null;
+  const yoyD  = latestYearAgo ? parseFloat(pct(latestYearAgo.nominal, price))   : null;
 
-  const wowColor = wowDelta == null ? 'var(--text)' : wowDelta >= 0 ? 'var(--red)' : 'var(--green)';
-  const m4Color  = m4Delta  == null ? 'var(--text)' : m4Delta  >= 0 ? 'var(--red)' : 'var(--green)';
-  const momColor = momDelta == null ? 'var(--text)' : momDelta >= 0 ? 'var(--red)' : 'var(--green)';
+  function cell(label, val, sub, isPos) {
+    const color = val == null ? 'var(--text)'
+                : isPos      ? 'var(--red)'
+                              : 'var(--green)';
+    const sign  = val != null && isPos ? '+' : '';
+    return `
+      <div class="tb-delta-cell">
+        <div class="tb-dlabel">${label}</div>
+        <div class="tb-dval" style="color:${color}">${val != null ? sign + val + '%' : '—'}</div>
+        <div class="tb-dsub">${sub || ''}</div>
+      </div>`;
+  }
 
-  el.innerHTML = `
-    <div class="wb-left">
-      <div class="wb-eyebrow">${isDaily ? "Today's" : 'Latest Weekly'} National Average · ${sourceLabel}</div>
-      <div class="wb-price-row">
-        <span class="wb-price">${fmt(price)}</span>
-        <span class="wb-unit">/gal</span>
-      </div>
-      <div class="wb-meta">Regular Unleaded · National Average · ${isDaily ? 'AAA Fuel Gauge Report (Daily)' : 'EIA (Weekly)'}</div>
-    </div>
-    <div class="wb-right">
-      ${wowDelta != null ? `
-      <div class="wb-stat">
-        <div class="wb-stat-label">Week-over-Week</div>
-        <div class="wb-stat-val" style="color:${wowColor}">${wowDelta >= 0 ? '+' : ''}${wowDelta}%</div>
-        <div class="wb-stat-sub">${wowDollar != null ? (parseFloat(wowDollar)>=0?'+':'')+fmt(Math.abs(parseFloat(wowDollar)))+' · ' : ''}${prevLabel || ''}</div>
-      </div>
-      <div class="wb-divider"></div>` : ''}
-      ${m4Delta != null ? `
-      <div class="wb-stat">
-        <div class="wb-stat-label">4-Week Change</div>
-        <div class="wb-stat-val" style="color:${m4Color}">${m4Delta >= 0 ? '+' : ''}${m4Delta}%</div>
-        <div class="wb-stat-sub">vs. ${label4 || '—'}</div>
-      </div>
-      <div class="wb-divider"></div>` : ''}
-      ${momDelta != null ? `
-      <div class="wb-stat">
-        <div class="wb-stat-label">vs. Latest Monthly Avg</div>
-        <div class="wb-stat-val" style="color:${momColor}">${momDelta >= 0 ? '+' : ''}${momDelta}%</div>
-        <div class="wb-stat-sub">EIA ${latestMonthly.label}: ${fmt(latestMonthly.nominal)}</div>
-      </div>
-      <div class="wb-divider"></div>` : ''}
-      <div class="wb-source-tag">${isDaily ? '★ Daily' : 'Weekly'}</div>
-    </div>`;
+  if (deltas) {
+    deltas.innerHTML = [
+      wowD  != null ? cell('Week-over-Week', wowD,  wowDollar ? (parseFloat(wowDollar)>=0?'+':'')+fmt(Math.abs(parseFloat(wowDollar)))+' · '+(prevLabel||'') : prevLabel||'', wowD >= 0) : '',
+      m4D   != null ? cell('4-Week Change',  m4D,   `vs. ${label4||'—'}`,        m4D  >= 0) : '',
+      momD  != null ? cell('vs. Monthly Avg', momD, `EIA ${latestMonthly?.label||''}: ${latestMonthly ? fmt(latestMonthly.nominal) : '—'}`, momD >= 0) : '',
+      yoyD  != null ? cell('Year-over-Year', yoyD,  `${latestYearAgo?.label||''}: ${latestYearAgo ? fmt(latestYearAgo.nominal) : '—'}`,  yoyD >= 0) : '',
+    ].join('');
+  }
+
+  // ── Bottom attribution ──
+  if (updated) {
+    const ts = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    updated.textContent = isAAA
+      ? `Updated ${ts} · AAA surveys 60,000+ stations daily`
+      : `EIA weekly fallback · Deploys to AAA once CF Worker is live`;
+  }
+
+  board.classList.remove('loading-state');
 }
 
 function formatWeekDate(period) {
