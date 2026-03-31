@@ -479,6 +479,13 @@ footer{border-top:1px solid var(--border);padding-top:18px;display:flex;flex-wra
   .theme-toggle:hover{border-color:var(--accent);color:var(--accent);}
   .theme-toggle-icon{font-size:13px;line-height:1;}
 
+
+  /* ─── FUEL SELECTOR ─── */
+  .fuel-sel-btn{font-family:var(--font-m);font-size:11px;letter-spacing:.06em;padding:5px 12px;border-radius:5px;border:none;background:transparent;color:var(--muted);cursor:pointer;transition:all .18s;white-space:nowrap;}
+  .fuel-sel-btn.active{background:var(--accent);color:#000;font-weight:600;}
+  .fuel-sel-btn:hover:not(.active){color:var(--accent);}
+  body.light .fuel-sel-btn.active{background:var(--accent);color:#fff;}
+
 </style>
 </head>
 <body>
@@ -653,16 +660,25 @@ footer{border-top:1px solid var(--border);padding-top:18px;display:flex;flex-wra
   <!-- MAIN CHART -->
   <div class="chart-outer">
     <div class="chart-header">
-      <div class="chart-title">Price History — Regular &amp; Diesel (Monthly)</div>
-      <div class="chart-badge" id="modeBadge">Nominal Prices</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div class="chart-title" id="mainChartTitle">Price History — Regular Unleaded (Monthly)</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <div style="display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:2px;gap:2px;" id="fuelToggle">
+          <button class="fuel-sel-btn active" id="fselReg"   onclick="setFuelSel('regular')">⛽ Regular</button>
+          <button class="fuel-sel-btn"         id="fselDsl"   onclick="setFuelSel('diesel')">🚛 Diesel</button>
+          <button class="fuel-sel-btn"         id="fselBoth"  onclick="setFuelSel('both')">Both</button>
+        </div>
+        <div class="chart-badge" id="modeBadge">Nominal Prices</div>
+      </div>
     </div>
     <div class="chart-wrap" style="height:clamp(280px,42vw,480px);">
       <canvas id="mainChart"></canvas>
       <div class="chart-loading" id="chartLoading"><div class="spin"></div>LOADING…</div>
     </div>
-    <div class="legend-row">
-      <div class="legend-item"><div class="legend-swatch" style="background:var(--accent)"></div><span>Regular Unleaded</span></div>
-      <div class="legend-item"><div class="legend-swatch" style="background:var(--diesel)"></div><span>Diesel</span></div>
+    <div class="legend-row" id="mainLegend">
+      <div class="legend-item" id="legReg"><div class="legend-swatch" style="background:var(--accent)"></div><span>Regular Unleaded</span></div>
+      <div class="legend-item" id="legDsl" style="display:none"><div class="legend-swatch" style="background:var(--diesel)"></div><span>Diesel</span></div>
       <div class="legend-item"><div class="legend-swatch" style="background:var(--dem);border:1px solid var(--dem-line)"></div><span>Democrat</span></div>
       <div class="legend-item"><div class="legend-swatch" style="background:var(--rep);border:1px solid var(--rep-line)"></div><span>Republican</span></div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgba(156,163,175,0.2);border:1px dashed rgba(156,163,175,0.4)"></div><span>Recession</span></div>
@@ -1132,60 +1148,141 @@ function BASE_CHART_OPTS(dataArr, yLabel) {
   };
 }
 
+
+// ═══════════════════════════════════════════════════════
+//  FUEL SELECTOR
+// ═══════════════════════════════════════════════════════
+function setFuelSel(fuel) {
+  activeFuel = fuel;
+  document.getElementById('fselReg').classList.toggle('active',  fuel === 'regular');
+  document.getElementById('fselDsl').classList.toggle('active',  fuel === 'diesel');
+  document.getElementById('fselBoth').classList.toggle('active', fuel === 'both');
+  const titles = {
+    regular: 'Price History — Regular Unleaded (Monthly)',
+    diesel:  'Price History — Diesel (Monthly)',
+    both:    'Price History — Regular &amp; Diesel (Monthly)',
+  };
+  const titleEl = document.getElementById('mainChartTitle');
+  if (titleEl) titleEl.innerHTML = titles[fuel];
+  const legReg = document.getElementById('legReg');
+  const legDsl = document.getElementById('legDsl');
+  if (legReg) legReg.style.display = (fuel === 'diesel')  ? 'none' : 'flex';
+  if (legDsl) legDsl.style.display = (fuel === 'regular') ? 'none' : 'flex';
+  buildMainChart();
+}
+
 // ═══════════════════════════════════════════════════════
 //  MAIN CHART (overview tab)
 // ═══════════════════════════════════════════════════════
 function buildMainChart() {
   const canvas = document.getElementById('mainChart');
-  const ctx = canvas.getContext('2d');
-  const regPrices = DATA_REG.map(d=>d[mode]);
-  const { isDark, gridCol, tickCol, borderCol, accentLine } = themeColors();
-  const grad = ctx.createLinearGradient(0,0,0,440);
-  grad.addColorStop(0, isDark ? 'rgba(245,166,35,0.22)' : 'rgba(154,98,0,0.14)');
-  grad.addColorStop(1,'rgba(245,166,35,0)');
+  if (!canvas) { console.warn('mainChart canvas not found'); return; }
+  if (!DATA_REG || !DATA_REG.length) { console.warn('DATA_REG empty'); return; }
 
-  if(charts.main){charts.main.destroy();}
-  const opts = BASE_CHART_OPTS(DATA_REG, mode==='nominal'?'$/gallon (Nominal)':'$/gallon (2026$)');
+  const ctx = canvas.getContext('2d');
+  const { isDark, accentLine } = themeColors();
+  const yLabel = mode === 'nominal' ? '$/gallon (Nominal)' : `$/gallon (${CPI_LABEL}$)`;
+
+  // Build datasets based on activeFuel selection
+  const datasets = [];
+
+  if (activeFuel === 'regular' || activeFuel === 'both') {
+    const regPrices = DATA_REG.map(d => d[mode]);
+    const grad = ctx.createLinearGradient(0, 0, 0, 440);
+    grad.addColorStop(0, isDark ? 'rgba(245,166,35,0.22)' : 'rgba(154,98,0,0.14)');
+    grad.addColorStop(1, 'rgba(245,166,35,0)');
+    datasets.push({
+      data: regPrices,
+      borderColor: accentLine,
+      borderWidth: 2,
+      pointRadius: 0,
+      pointHoverRadius: 6,
+      pointHoverBackgroundColor: accentLine,
+      pointHoverBorderColor: isDark ? '#0a0c10' : '#fff',
+      pointHoverBorderWidth: 2,
+      backgroundColor: activeFuel === 'both' ? 'transparent' : grad,
+      fill: activeFuel !== 'both',
+      tension: 0.35,
+      label: 'Regular',
+    });
+  }
+
+  if (activeFuel === 'diesel' || activeFuel === 'both') {
+    // Align diesel to regular's index positions
+    const dslPrices = DATA_REG.map(d => {
+      const dd = DATA_DSL.find(x => x.year === d.year && x.month === d.month);
+      return dd ? dd[mode] : null;
+    });
+    const dslGrad = ctx.createLinearGradient(0, 0, 0, 440);
+    dslGrad.addColorStop(0, isDark ? 'rgba(167,139,250,0.18)' : 'rgba(91,33,182,0.12)');
+    dslGrad.addColorStop(1, 'rgba(167,139,250,0)');
+    datasets.push({
+      data: dslPrices,
+      borderColor: isDark ? '#a78bfa' : '#5b21b6',
+      borderWidth: activeFuel === 'both' ? 1.5 : 2,
+      pointRadius: 0,
+      pointHoverRadius: 6,
+      pointHoverBackgroundColor: isDark ? '#a78bfa' : '#5b21b6',
+      pointHoverBorderColor: isDark ? '#0a0c10' : '#fff',
+      pointHoverBorderWidth: 2,
+      backgroundColor: activeFuel === 'both' ? 'transparent' : dslGrad,
+      fill: activeFuel === 'diesel',
+      tension: 0.35,
+      label: 'Diesel',
+      spanGaps: true,
+    });
+  }
+
+  if (charts.main) { charts.main.destroy(); charts.main = null; }
+
+  const opts = BASE_CHART_OPTS(DATA_REG, yLabel);
   opts.plugins.tooltip.callbacks = {
-    title([item]){const d=DATA_REG[item.parsed.x]; return d?.label||'';},
-    label(item){
-      const d=DATA_REG[item.parsed.x];
-      const dd=DATA_DSL[item.parsed.x];
-      const pres=PRESIDENTS.find(p=>(d.year>p.sy||(d.year===p.sy&&d.month>=p.sm))&&(p.isCurrent||(d.year<p.ey||(d.year===p.ey&&d.month<=p.em))));
-      const lines=[`  Regular:  ${fmt(d[mode])}/gal`];
-      if(dd) lines.push(`  Diesel:   ${fmt(dd[mode])}/gal`);
-      if(pres) lines.push(`  Pres:     ${pres.name} (${pres.party})`);
+    title([item]) {
+      const d = DATA_REG[item.parsed.x];
+      return d ? d.label : '';
+    },
+    label(item) {
+      const idx = item.parsed.x;
+      const d   = DATA_REG[idx];
+      if (!d) return [];
+      // Find matching diesel entry by year+month (not index)
+      const dd = DATA_DSL.find(x => x.year === d.year && x.month === d.month);
+      const pres = PRESIDENTS.find(p =>
+        (d.year > p.sy || (d.year === p.sy && d.month >= p.sm)) &&
+        (p.isCurrent || (d.year < p.ey || (d.year === p.ey && d.month <= p.em)))
+      );
+      const lines = [];
+      if (activeFuel === 'regular' || activeFuel === 'both')
+        lines.push(`  Regular:  ${fmt(d[mode])}/gal`);
+      if ((activeFuel === 'diesel' || activeFuel === 'both') && dd)
+        lines.push(`  Diesel:   ${fmt(dd[mode])}/gal`);
+      if (activeFuel === 'both' && dd)
+        lines.push(`  Spread:   +${fmt(dd[mode] - d[mode])}`);
+      if (pres)
+        lines.push(`  Pres:     ${pres.name} (${pres.party})`);
       return lines;
     }
   };
 
-  // Check if we have diesel data aligned with regular
-  const dslPrices = DATA_REG.map(d=>{
-    const dd=DATA_DSL.find(x=>x.year===d.year&&x.month===d.month);
-    return dd?dd[mode]:null;
+  charts.main = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: DATA_REG.map((_, i) => i),
+      datasets,
+    },
+    options: opts,
+    plugins: [makePresPlugin(DATA_REG), makeRecPlugin(DATA_REG)],
   });
 
-  charts.main = new Chart(ctx, {
-    type:'line',
-    data:{
-      labels:DATA_REG.map((_,i)=>i),
-      datasets:[
-        {data:regPrices,borderColor:accentLine,borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#f5a623',backgroundColor:grad,fill:true,tension:0.3,label:'Regular'},
-        {data:dslPrices,borderColor:'#a78bfa',borderWidth:1.5,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#a78bfa',backgroundColor:'transparent',fill:false,tension:0.3,label:'Diesel',spanGaps:true},
-      ]
-    },
-    options:opts,
-    plugins:[makePresPlugin(DATA_REG),makeRecPlugin(DATA_REG)]
-  });
   document.getElementById('chartLoading').classList.add('hidden');
-  // Init slider once chart is built (first time only)
+
+  // Slider init or re-apply
   if (rangeMax === 0) {
     rangeMin = 0;
     rangeMax = DATA_REG.length - 1;
     initSlider();
     setPreset('ALL');
   } else {
-    // Re-apply current range after rebuild
     applyRange();
     updateSliderUI();
   }
@@ -1988,6 +2085,7 @@ function startCountdown() {
 // ═══════════════════════════════════════════════════════
 //  TIME RANGE SLIDER
 // ═══════════════════════════════════════════════════════
+let activeFuel = 'regular'; // 'regular' | 'diesel' | 'both'
 let rangeMin = 0;      // index into DATA_REG
 let rangeMax = 0;      // updated once data loads
 let activePreset = 'ALL';
