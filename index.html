@@ -534,7 +534,7 @@ footer{border-top:1px solid var(--border);padding-top:18px;display:flex;flex-wra
 
 <header>
   <div>
-    <div class="eyebrow">EIA · AAA · BLS CPI-U · Live Refresh</div>
+    <div class="eyebrow">EIA Open Data API · BLS CPI-U · Live Refresh</div>
     <h1>U.S. <span>Gas Prices</span><br>1985 – Present</h1>
     <div class="subtitle">Regular Unleaded · National Average · Monthly $/gal · EIA EMM_EPMR_PTE_NUS_DPG</div>
   </div>
@@ -579,7 +579,7 @@ footer{border-top:1px solid var(--border);padding-top:18px;display:flex;flex-wra
   <div class="today-board loading-state" id="weeklyBanner">
     <div class="today-board-top">
       <div class="tb-price-block">
-        <div class="tb-source-row"><div class="tb-live-dot"></div><div class="tb-source-label">AAA Daily</div></div>
+        <div class="tb-source-row"><div class="tb-live-dot"></div><div class="tb-source-label">EIA Weekly — Live</div></div>
         <div class="tb-date">Fetching…</div>
         <div class="tb-big-price dim">—</div>
         <div class="tb-gal">/gallon</div>
@@ -588,7 +588,7 @@ footer{border-top:1px solid var(--border);padding-top:18px;display:flex;flex-wra
       <div class="tb-deltas" id="tbDeltas"></div>
     </div>
     <div class="today-board-bottom">
-      <div class="tb-attrib">Source: <a href="https://gasprices.aaa.com/" target="_blank">AAA Fuel Gauge Report</a> · 60,000+ stations surveyed daily</div>
+      <div class="tb-attrib">Source: <a href="https://www.eia.gov/petroleum/gasdiesel/" target="_blank">EIA Gasoline &amp; Diesel Update</a> · Official U.S. Government · Updates every Monday</div>
       <div class="tb-updated" id="tbUpdated">Loading…</div>
     </div>
   </div>
@@ -782,7 +782,7 @@ footer{border-top:1px solid var(--border);padding-top:18px;display:flex;flex-wra
 <footer>
   <div class="footer-sources">
     <strong style="color:var(--text)">Live Data Sources</strong><br>
-    AAA Daily: <a href="https://gasprices.aaa.com/" target="_blank">gasprices.aaa.com</a> · via CF Worker /daily-price<br>
+    EIA Weekly: <a href="https://www.eia.gov/petroleum/gasdiesel/" target="_blank">EIA Gasoline &amp; Diesel Update</a> · via CF Worker /daily-price · Updates Mondays<br>
     EIA API v2: <a href="https://api.eia.gov/v2/petroleum/pri/gnd/data/" target="_blank">api.eia.gov</a> · EMM_EPMR_PTE_NUS_DPG + EMD_EPD2D_PTE_NUS_DPG (Diesel)<br>
     BLS CPI-U: <a href="https://www.bls.gov/cpi/" target="_blank">bls.gov/cpi</a> · CUUR0000SA0 · via CF Worker /cpi-data<br>
     State taxes: <a href="https://www.api.org/" target="_blank">API.org</a> · 2025 motor fuel tax rates
@@ -1369,12 +1369,15 @@ async function fetchWeekly() {
 }
 
 async function enrichWithEIAWeekly() {
-  try {
-    const url=`https://api.eia.gov/v2/petroleum/pri/gnd/data/?api_key=${EIA_API_KEY}&frequency=weekly&data[0]=value&facets[series][]=EMM_EPMR_PTE_NUS_DPG&sort[0][column]=period&sort[0][direction]=desc&length=5`;
-    const json=(await (await fetch(url)).json());
-    const rows=(json?.response?.data||[]).filter(r=>r.value!=null&&r.value!=='');
-    if(rows.length>=2){WEEKLY.eiaWeekPrice=parseFloat(rows[0].value);WEEKLY.eiaWeekPeriod=rows[0].period;WEEKLY.eiaWeekPrev=parseFloat(rows[1].value);WEEKLY.eiaWeekPrevP=rows[1].period;WEEKLY.eiaWeek4=rows[4]?parseFloat(rows[4].value):null;WEEKLY.eiaWeek4P=rows[4]?rows[4].period:null;}
-  } catch(e){}
+  // Worker already returns prev/prev4 data — map fields directly
+  if (WEEKLY) {
+    WEEKLY.eiaWeekPrice  = WEEKLY.price;
+    WEEKLY.eiaWeekPeriod = WEEKLY.period || WEEKLY.date;
+    WEEKLY.eiaWeekPrev   = WEEKLY.prevPrice;
+    WEEKLY.eiaWeekPrevP  = WEEKLY.prevPeriod;
+    WEEKLY.eiaWeek4      = WEEKLY.prev4Price;
+    WEEKLY.eiaWeek4P     = WEEKLY.prev4Period;
+  }
 }
 
 async function fetchEIAWeeklyFallback() {
@@ -1392,15 +1395,18 @@ function buildWeeklyBanner() {
   const board=document.getElementById('weeklyBanner');
   const deltas=document.getElementById('tbDeltas');
   const updated=document.getElementById('tbUpdated');
-  if(!WEEKLY){board.querySelector('.tb-big-price').textContent='—';board.querySelector('.tb-date').textContent='Price unavailable';return;}
+  if(!WEEKLY){board.querySelector('.tb-big-price').textContent='—';board.querySelector('.tb-date').textContent='Connecting to EIA…';setTimeout(fetchWeekly,4000);return;}
 
-  const {price,source,isDaily,date}=WEEKLY;
+  const {price,source,isDaily,date,period,periodLabel,sourceLabel}=WEEKLY;
   board.querySelector('.tb-big-price').textContent=fmt(price);
   board.querySelector('.tb-big-price').className='tb-big-price';
   const dot=board.querySelector('.tb-live-dot'),lbl=board.querySelector('.tb-source-label');
-  if(isDaily){dot.className='tb-live-dot';lbl.className='tb-source-label';lbl.textContent=source+' — Live';}
-  else{dot.className='tb-live-dot amber';lbl.className='tb-source-label amber';lbl.textContent='EIA Weekly';}
-  board.querySelector('.tb-date').textContent=isDaily?`Today · ${fmtDate(date)}`:`Week ending ${fmtDate(date)}`;
+  // EIA weekly is official live government data — always green
+  dot.className='tb-live-dot';
+  lbl.className='tb-source-label';
+  lbl.textContent=sourceLabel||(isDaily?'AAA Daily — Live':'EIA Weekly — Live');
+  const displayDate=periodLabel||(isDaily?`Today · ${fmtDate(date||period)}`:`Week ending ${fmtDate(date||period)}`);
+  board.querySelector('.tb-date').textContent=displayDate;
 
   const ref=WEEKLY.eiaWeekPrice||price,prev=WEEKLY.eiaWeekPrev,pLbl=WEEKLY.eiaWeekPrevP?fmtDate(WEEKLY.eiaWeekPrevP):null;
   const p4=WEEKLY.eiaWeek4,p4Lbl=WEEKLY.eiaWeek4P?fmtDate(WEEKLY.eiaWeek4P):null;
@@ -1883,11 +1889,12 @@ function updateTicker() {
   if (WEEKLY) {
     price = WEEKLY.price;
     isLive = WEEKLY.isDaily;
-    sourceText = WEEKLY.isDaily
-      ? `AAA Fuel Gauge · ${fmtDate(WEEKLY.date)}`
-      : `EIA Weekly · Wk ending ${fmtDate(WEEKLY.date)}`;
-    labelEl.textContent = WEEKLY.isDaily ? "TODAY'S PRICE" : 'LATEST WEEKLY';
-    dotEl.className = WEEKLY.isDaily ? 'ticker-dot' : 'ticker-dot amber';
+    sourceText = WEEKLY.sourceLabel || (WEEKLY.isDaily
+      ? `AAA Fuel Gauge · ${fmtDate(WEEKLY.date||WEEKLY.period)}`
+      : `EIA Weekly · ${WEEKLY.periodLabel||('Wk ending '+fmtDate(WEEKLY.date||WEEKLY.period))}`);
+    labelEl.textContent = WEEKLY.isDaily ? "TODAY'S PRICE" : 'LATEST WEEKLY PRICE';
+    // EIA weekly is live government data — show green dot always
+    dotEl.className = 'ticker-dot';
   } else if (DATA_REG.length) {
     const last = DATA_REG[DATA_REG.length - 1];
     price = last.nominal;
