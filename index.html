@@ -1079,39 +1079,58 @@ function makeRecPlugin(dataArr) {
   };
 }
 
-const BASE_CHART_OPTS = (dataArr, yLabel) => ({
-  responsive:true, maintainAspectRatio:false,
-  interaction:{mode:'index',intersect:false},
-  plugins:{
-    legend:{display:false},
-    tooltip:{
-      backgroundColor:'#181c24',borderColor:'#2d3445',borderWidth:1,
-      titleColor:'#f5a623',bodyColor:'#b0b8cc',padding:12,
-      titleFont:{family:"'Barlow Condensed',sans-serif",size:13,weight:'700'},
-      bodyFont:{family:"'DM Mono',monospace",size:11},
-    }
-  },
-  scales:{
-    x:{
-      type:'linear',
-      grid:{color:gridCol},
-      ticks:{color:tickCol,font:{family:"'DM Mono',monospace",size:10},maxRotation:0,autoSkip:false,
-        callback(val){
-          const i=Math.round(val);
-          if(i<0||i>=dataArr.length) return '';
-          const d=dataArr[i];
-          return (d&&d.month===1&&d.year%5===0)?d.year:'';
-        },maxTicksLimit:300},
-      border:{color:'#232834'},min:0,max:dataArr.length-1,
+// ── Theme-aware color helpers — module-level, always current ──────────
+function themeColors() {
+  const dark = !document.body.classList.contains('light');
+  return {
+    isDark:     dark,
+    gridCol:    dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.09)',
+    tickCol:    dark ? '#6b7385' : '#5a5750',
+    borderCol:  dark ? '#232834' : '#b8b4a8',
+    accentLine: dark ? '#f5a623' : '#9a6200',
+    tooltipBg:  dark ? '#181c24' : '#ffffff',
+    tooltipBdr: dark ? '#2d3445' : '#c8c5bb',
+    tooltipTtl: dark ? '#f5a623' : '#9a6200',
+    tooltipBdy: dark ? '#b0b8cc' : '#3d3b35',
+  };
+}
+
+function BASE_CHART_OPTS(dataArr, yLabel) {
+  const { gridCol, tickCol, borderCol, tooltipBg, tooltipBdr, tooltipTtl, tooltipBdy } = themeColors();
+  return {
+    responsive:true, maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        backgroundColor:tooltipBg, borderColor:tooltipBdr, borderWidth:1,
+        titleColor:tooltipTtl, bodyColor:tooltipBdy, padding:12,
+        titleFont:{family:"'Barlow Condensed',sans-serif",size:13,weight:'700'},
+        bodyFont:{family:"'DM Mono',monospace",size:11},
+      }
     },
-    y:{
-      grid:{color:gridCol},
-      ticks:{color:tickCol,font:{family:"'DM Mono',monospace",size:10},callback:v=>`$${v.toFixed(2)}`},
-      border:{color:borderCol},
-      title:{display:true,text:yLabel||'$/gallon',color:'#4a5568',font:{family:"'DM Mono',monospace",size:10}}
+    scales:{
+      x:{
+        type:'linear',
+        grid:{color:gridCol},
+        ticks:{color:tickCol,font:{family:"'DM Mono',monospace",size:10},maxRotation:0,autoSkip:false,
+          callback(val){
+            const i=Math.round(val);
+            if(i<0||i>=dataArr.length) return '';
+            const d=dataArr[i];
+            return (d&&d.month===1&&d.year%5===0)?d.year:'';
+          },maxTicksLimit:300},
+        border:{color:borderCol},min:0,max:dataArr.length-1,
+      },
+      y:{
+        grid:{color:gridCol},
+        ticks:{color:tickCol,font:{family:"'DM Mono',monospace",size:10},callback:v=>`$${v.toFixed(2)}`},
+        border:{color:borderCol},
+        title:{display:true,text:yLabel||'$/gallon',color:tickCol,font:{family:"'DM Mono',monospace",size:10}}
+      }
     }
-  }
-});
+  };
+}
 
 // ═══════════════════════════════════════════════════════
 //  MAIN CHART (overview tab)
@@ -1120,11 +1139,7 @@ function buildMainChart() {
   const canvas = document.getElementById('mainChart');
   const ctx = canvas.getContext('2d');
   const regPrices = DATA_REG.map(d=>d[mode]);
-  const isDark = !document.body.classList.contains('light');
-  const gridCol   = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.09)';
-  const tickCol   = isDark ? '#6b7385' : '#5a5750';
-  const borderCol = isDark ? '#232834' : '#b8b4a8';
-  const accentLine = isDark ? '#f5a623' : '#9a6200';
+  const { isDark, gridCol, tickCol, borderCol, accentLine } = themeColors();
   const grad = ctx.createLinearGradient(0,0,0,440);
   grad.addColorStop(0, isDark ? 'rgba(245,166,35,0.22)' : 'rgba(154,98,0,0.14)');
   grad.addColorStop(1,'rgba(245,166,35,0)');
@@ -1180,7 +1195,7 @@ function buildMainChart() {
 //  HISTORY CHARTS
 // ═══════════════════════════════════════════════════════
 function buildHistoryCharts() {
-  if(charts.inflation && charts.dieselSpread && charts.fullHistory) return;
+  // No early-return guard — charts rebuild on theme change
 
   // 1. Nominal vs Inflation-adjusted
   {
@@ -1188,8 +1203,9 @@ function buildHistoryCharts() {
     if(charts.inflation) charts.inflation.destroy();
     const nomData=DATA_REG.map(d=>d.nominal);
     const adjData=DATA_REG.map(d=>d.adjusted);
+    const {isDark:d1,accentLine:al1}=themeColors();
     const grad=ctx.createLinearGradient(0,0,0,460);
-    grad.addColorStop(0,'rgba(245,166,35,0.15)');grad.addColorStop(1,'rgba(245,166,35,0)');
+    grad.addColorStop(0,d1?'rgba(245,166,35,0.15)':'rgba(154,98,0,0.12)');grad.addColorStop(1,'rgba(245,166,35,0)');
     const grad2=ctx.createLinearGradient(0,0,0,460);
     grad2.addColorStop(0,'rgba(96,165,250,0.12)');grad2.addColorStop(1,'rgba(96,165,250,0)');
     const opts=BASE_CHART_OPTS(DATA_REG,'$/gallon');
@@ -1198,7 +1214,7 @@ function buildHistoryCharts() {
       label(i){const d=DATA_REG[i.parsed.x];return[`  Nominal:  ${fmt(d.nominal)}/gal`,`  Real:      ${fmt(d.adjusted)}/gal (${CPI_LABEL}$)`];}
     };
     charts.inflation=new Chart(ctx,{type:'line',data:{labels:DATA_REG.map((_,i)=>i),datasets:[
-      {data:nomData,borderColor:'#f5a623',borderWidth:2,pointRadius:0,backgroundColor:grad,fill:true,tension:0.3,label:'Nominal'},
+      {data:nomData,borderColor:al1,borderWidth:2,pointRadius:0,backgroundColor:grad,fill:true,tension:0.3,label:'Nominal'},
       {data:adjData,borderColor:'#60a5fa',borderWidth:2,pointRadius:0,backgroundColor:grad2,fill:true,tension:0.3,label:'Real'},
     ]},options:opts});
   }
@@ -1228,15 +1244,16 @@ function buildHistoryCharts() {
     const ctx=document.getElementById('fullHistoryChart').getContext('2d');
     if(charts.fullHistory) charts.fullHistory.destroy();
     const prices=DATA_REG.map(d=>d[mode]);
+    const {isDark:d3,accentLine:al3}=themeColors();
     const grad=ctx.createLinearGradient(0,0,0,460);
-    grad.addColorStop(0,'rgba(245,166,35,0.2)');grad.addColorStop(1,'rgba(245,166,35,0)');
+    grad.addColorStop(0,d3?'rgba(245,166,35,0.2)':'rgba(154,98,0,0.13)');grad.addColorStop(1,'rgba(245,166,35,0)');
     const opts=BASE_CHART_OPTS(DATA_REG,mode==='nominal'?'$/gallon (Nominal)':'$/gallon (2026$)');
     opts.plugins.tooltip.callbacks={
       title([i]){return DATA_REG[i.parsed.x]?.label||'';},
       label(i){const d=DATA_REG[i.parsed.x];const pres=PRESIDENTS.find(p=>(d.year>p.sy||(d.year===p.sy&&d.month>=p.sm))&&(p.isCurrent||(d.year<p.ey||(d.year===p.ey&&d.month<=p.em))));const lines=[`  ${mode==='nominal'?'Nominal':'Real'}: ${fmt(d[mode])}/gal`];if(pres)lines.push(`  Pres: ${pres.name} (${pres.party})`);const rec=RECESSIONS.find(r=>{const s=r.start,e=r.end;return(d.year>s[0]||(d.year===s[0]&&d.month>=s[1]))&&(d.year<e[0]||(d.year===e[0]&&d.month<=e[1]));});if(rec)lines.push(`  ⚠ NBER Recession period`);return lines;}
     };
     charts.fullHistory=new Chart(ctx,{type:'line',data:{labels:DATA_REG.map((_,i)=>i),datasets:[
-      {data:prices,borderColor:'#f5a623',borderWidth:2,pointRadius:0,pointHoverRadius:6,pointHoverBackgroundColor:'#f5a623',backgroundColor:grad,fill:true,tension:0.3}
+      {data:prices,borderColor:al3,borderWidth:2,pointRadius:0,pointHoverRadius:6,pointHoverBackgroundColor:al3,backgroundColor:grad,fill:true,tension:0.3}
     ]},options:opts,plugins:[makePresPlugin(DATA_REG),makeRecPlugin(DATA_REG)]});
     document.getElementById('histBadge').textContent=mode==='nominal'?'Nominal':'Inflation-Adj. (2026$)';
   }
@@ -1275,7 +1292,7 @@ function buildPresChart() {
 //  ANALYSIS CHARTS
 // ═══════════════════════════════════════════════════════
 function buildAnalysisCharts() {
-  if(charts.cpi && charts.realNom) return;
+  // Rebuild on theme change
 
   // CPI YoY vs gas
   {
@@ -1317,6 +1334,7 @@ function buildAnalysisCharts() {
     if(charts.realNom) charts.realNom.destroy();
     const nomData=DATA_REG.map(d=>d.nominal);
     const adjData=DATA_REG.map(d=>d.adjusted);
+    const {isDark:d5}=themeColors();
     const gradFill=ctx.createLinearGradient(0,0,0,460);
     gradFill.addColorStop(0,'rgba(96,165,250,0.12)');gradFill.addColorStop(1,'rgba(96,165,250,0)');
     const opts=BASE_CHART_OPTS(DATA_REG,'$/gallon');
